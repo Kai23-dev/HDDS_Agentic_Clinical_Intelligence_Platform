@@ -19,8 +19,8 @@ No company data, client data, real patient data, internal GDX details, secrets, 
 - **Data:** 3 synthetic patient profiles covering different clinical scenarios (diabetes, heart failure, anemia)
 - **Agents:** Six rule-based agents that process patient data and produce structured outputs
 - **Output:** Combined JSON file (`ai_medical_insights.json`) with all agent results
-- **Dashboard:** Auto-generated HTML dashboard for visual insights review
-- **Dependencies:** Python standard library + JSON only. No external packages required.
+- **Backend (API):** FastAPI server that serves the generated insights
+- **Frontend (UI):** React 18 + Vite + Tailwind CSS dashboard
 
 ---
 
@@ -34,68 +34,35 @@ No company data, client data, real patient data, internal GDX details, secrets, 
 
 ---
 
-## Agent Flow
-
-```
-patient_profile.json
-        │
-        ▼
-┌─────────────────────┐
-│ 1. Clinical Summary │  → Summarizes history, meds, abnormal labs
-└────────┬────────────┘
-         │
-┌────────▼────────────┐
-│ 2. Risk Assessment  │  → Classifies risk as Low / Medium / High
-└────────┬────────────┘
-         │
-┌────────▼────────────┐
-│ 3. Early Detection  │  → Flags abnormal labs, monitoring gaps
-└────────┬────────────┘
-         │
-┌────────▼──────────────┐
-│ 4. Recommendation     │  → Generates clinician-review drafts
-└────────┬──────────────┘
-         │
-┌────────▼──────────────────┐
-│ 5. Evidence Validation    │  → Maps outputs back to source fields
-└────────┬──────────────────┘
-         │
-┌────────▼──────────────┐
-│ 6. Follow-up Action   │  → Suggests prioritized follow-up actions
-└────────┬──────────────┘
-         │
-         ▼
-  ai_medical_insights.json
-         │
-         ▼
-  clinical_dashboard.html
-```
-
----
-
 ## How to Run
 
-### Single Patient (Default)
+### 1. Run the AI Agent Pipeline
+Generate the insights JSON file (requires standard Python 3.8+).
+
 ```bash
 cd hdds_clinical_intelligence
-python run_hdds_prototype.py
-```
-
-### All Patients
-```bash
 python run_hdds_prototype.py --all
 ```
 
-### Specific Patient
+### 2. Start the FastAPI Backend
+Serve the insights via REST API on `localhost:8000`.
+
 ```bash
-python run_hdds_prototype.py --patient SYNTH-002
+cd hdds_clinical_intelligence
+pip install fastapi uvicorn
+uvicorn api:app --reload
 ```
 
-### Generate Dashboard
+### 3. Start the React Frontend
+Run the Vite development server for the dashboard on `localhost:5173`.
+
 ```bash
-python dashboard/generate_dashboard.py
+cd hdds_clinical_intelligence/frontend
+npm install
+npm run dev
 ```
-Then open `dashboard/clinical_dashboard.html` in your browser.
+
+Then open `http://localhost:5173` in your browser.
 
 ---
 
@@ -103,50 +70,18 @@ Then open `dashboard/clinical_dashboard.html` in your browser.
 
 ```
 hdds_clinical_intelligence/
-├── agents/                        # Agent modules
-│   ├── __init__.py
-│   ├── clinical_summary_agent.py
-│   ├── risk_assessment_agent.py
-│   ├── early_detection_agent.py
-│   ├── recommendation_agent.py
-│   ├── evidence_validation_agent.py
-│   └── followup_action_agent.py
-├── data/
-│   ├── raw/                       # Placeholder for future raw data
-│   ├── processed/
-│   │   ├── patient_profile.json   # Single synthetic patient
-│   │   └── all_patients.json      # All 3 synthetic patients
-│   └── sample_notes/              # Placeholder for clinical notes
-├── docs/
-│   ├── architecture.md
-│   ├── prototype_roadmap.md
-│   └── responsible_ai_notes.md
-├── extraction/
-│   ├── azure_health_nlp_optional.md
-│   ├── extraction_schema.json
-│   └── gdx_extraction_reference.md
-├── outputs/
-│   └── ai_medical_insights.json   # Generated output
-├── dashboard/
-│   ├── generate_dashboard.py      # Dashboard generator script
-│   └── clinical_dashboard.html    # Generated visual dashboard
-├── .gitignore
-├── README.md
-└── run_hdds_prototype.py          # Main runner script
+├── agents/                        # AI Agent logic
+├── api.py                         # FastAPI server
+├── data/                          # Synthetic patient JSON data
+├── docs/                          # Architecture & design docs
+├── extraction/                    # Schema definitions
+├── frontend/                      # React + Vite application
+│   ├── src/
+│   │   ├── App.jsx                # Main dashboard UI
+│   │   └── index.css              # Tailwind + custom CSS
+│   ├── package.json
+│   └── tailwind.config.js
+├── outputs/                       # Generated insights JSON
+├── run_hdds_prototype.py          # Main AI runner script
+└── README.md
 ```
-
----
-
-## Future Plan
-
-- Replace sample JSON with **Synthea CSV extraction** for realistic synthetic patient populations
-- Add NLP-based extraction using Azure Health NLP or similar services
-- Integrate with FHIR-compatible data formats
-- Add more sophisticated ML-based agents alongside the rule-based ones
-
----
-
-## Requirements
-
-- Python 3.8 or higher
-- No external packages — uses Python standard library only
