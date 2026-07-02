@@ -97,8 +97,16 @@ export default function ResultsView({ data, onBack }) {
         >
           <ArrowLeft className="w-4 h-4" /> Upload new document
         </button>
-        <div className="text-xs text-gray-400">
-          Generated: {new Date(meta.generated_at).toLocaleString()}
+        <div className="flex items-center gap-4">
+          <button 
+            onClick={() => window.print()}
+            className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded transition-colors"
+          >
+            <FileText className="w-3.5 h-3.5" /> Export to PDF
+          </button>
+          <div className="text-xs text-gray-400">
+            Generated: {new Date(meta.generated_at).toLocaleString()}
+          </div>
         </div>
       </div>
 
