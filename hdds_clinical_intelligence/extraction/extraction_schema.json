@@ -1,0 +1,76 @@
+{
+  "schema_version": "1.0.0",
+  "description": "Extraction schema for mapping raw clinical data to structured patient profile format",
+  "target_format": "patient_profile.json",
+  "field_mappings": {
+    "patient_profile": {
+      "source": "demographics",
+      "fields": {
+        "patient_id": {"type": "string", "required": true},
+        "name": {"type": "string", "required": true},
+        "age": {"type": "integer", "required": true},
+        "gender": {"type": "string", "required": true},
+        "date_of_birth": {"type": "date", "format": "YYYY-MM-DD", "required": false},
+        "blood_type": {"type": "string", "required": false},
+        "primary_language": {"type": "string", "required": false},
+        "emergency_contact": {"type": "string", "required": false}
+      }
+    },
+    "medical_history": {
+      "source": "conditions",
+      "fields": {
+        "condition": {"type": "string", "required": true},
+        "icd_code": {"type": "string", "required": false},
+        "diagnosed_date": {"type": "date", "format": "YYYY-MM-DD", "required": false},
+        "status": {"type": "string", "enum": ["Active", "Resolved", "Chronic"], "required": true},
+        "severity": {"type": "string", "required": false}
+      }
+    },
+    "medications": {
+      "source": "medication_list",
+      "fields": {
+        "name": {"type": "string", "required": true},
+        "dosage": {"type": "string", "required": true},
+        "frequency": {"type": "string", "required": true},
+        "route": {"type": "string", "required": false},
+        "prescribing_doctor": {"type": "string", "required": false},
+        "start_date": {"type": "date", "format": "YYYY-MM-DD", "required": false},
+        "indication": {"type": "string", "required": false}
+      }
+    },
+    "lab_results": {
+      "source": "observations",
+      "fields": {
+        "test_name": {"type": "string", "required": true},
+        "value": {"type": "number|string", "required": true},
+        "unit": {"type": "string", "required": true},
+        "reference_range": {"type": "string", "required": false},
+        "status": {"type": "string", "enum": ["Normal", "Elevated", "Low", "Borderline High", "Within Range"], "required": true},
+        "date": {"type": "date", "format": "YYYY-MM-DD", "required": true},
+        "ordering_provider": {"type": "string", "required": false}
+      }
+    },
+    "procedures": {
+      "source": "procedures",
+      "fields": {
+        "name": {"type": "string", "required": true},
+        "date": {"type": "date", "format": "YYYY-MM-DD", "required": true},
+        "provider": {"type": "string", "required": false},
+        "result": {"type": "string", "required": false},
+        "cpt_code": {"type": "string", "required": false}
+      }
+    },
+    "encounters": {
+      "source": "encounters",
+      "fields": {
+        "encounter_id": {"type": "string", "required": true},
+        "date": {"type": "date", "format": "YYYY-MM-DD", "required": true},
+        "type": {"type": "string", "required": true},
+        "provider": {"type": "string", "required": false},
+        "reason": {"type": "string", "required": true},
+        "notes": {"type": "string", "required": false},
+        "follow_up": {"type": "string", "required": false}
+      }
+    }
+  }
+}

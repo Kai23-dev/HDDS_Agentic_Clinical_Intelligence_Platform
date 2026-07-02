@@ -1,0 +1,131 @@
+{
+  "patient_profile": {
+    "patient_id": "SYNTH-001",
+    "name": "John Doe (Synthetic)",
+    "age": 58,
+    "gender": "Male",
+    "date_of_birth": "1968-03-15",
+    "blood_type": "A+",
+    "primary_language": "English",
+    "emergency_contact": "Jane Doe (Spouse)"
+  },
+  "medical_history": [
+    {
+      "condition": "Type 2 diabetes mellitus",
+      "icd_code": "E11.9",
+      "diagnosed_date": "2018-06-10",
+      "status": "Active",
+      "severity": "Moderate"
+    },
+    {
+      "condition": "Hypertension",
+      "icd_code": "I10",
+      "diagnosed_date": "2016-01-22",
+      "status": "Active",
+      "severity": "Controlled"
+    }
+  ],
+  "medications": [
+    {
+      "name": "Metformin",
+      "dosage": "500 mg",
+      "frequency": "Twice daily",
+      "route": "Oral",
+      "prescribing_doctor": "Dr. Smith",
+      "start_date": "2018-06-15",
+      "indication": "Type 2 diabetes mellitus"
+    },
+    {
+      "name": "Amlodipine",
+      "dosage": "5 mg",
+      "frequency": "Once daily",
+      "route": "Oral",
+      "prescribing_doctor": "Dr. Smith",
+      "start_date": "2016-02-01",
+      "indication": "Hypertension"
+    }
+  ],
+  "lab_results": [
+    {
+      "test_name": "HbA1c",
+      "value": 9.2,
+      "unit": "%",
+      "reference_range": "4.0-5.6",
+      "status": "Elevated",
+      "date": "2025-06-01",
+      "ordering_provider": "Dr. Smith"
+    },
+    {
+      "test_name": "Creatinine",
+      "value": 1.4,
+      "unit": "mg/dL",
+      "reference_range": "0.7-1.3",
+      "status": "Borderline High",
+      "date": "2025-06-01",
+      "ordering_provider": "Dr. Smith"
+    },
+    {
+      "test_name": "Fasting Glucose",
+      "value": 185,
+      "unit": "mg/dL",
+      "reference_range": "70-100",
+      "status": "Elevated",
+      "date": "2025-06-01",
+      "ordering_provider": "Dr. Smith"
+    },
+    {
+      "test_name": "Blood Pressure",
+      "value": "138/88",
+      "unit": "mmHg",
+      "reference_range": "< 130/80",
+      "status": "Borderline High",
+      "date": "2025-06-01",
+      "ordering_provider": "Dr. Smith"
+    },
+    {
+      "test_name": "eGFR",
+      "value": 52,
+      "unit": "mL/min/1.73m2",
+      "reference_range": "> 60",
+      "status": "Low",
+      "date": "2025-06-01",
+      "ordering_provider": "Dr. Smith"
+    }
+  ],
+  "procedures": [
+    {
+      "name": "Annual Diabetic Eye Exam",
+      "date": "2025-01-15",
+      "provider": "Dr. Patel (Ophthalmology)",
+      "result": "No diabetic retinopathy detected",
+      "cpt_code": "92004"
+    },
+    {
+      "name": "Comprehensive Metabolic Panel",
+      "date": "2025-06-01",
+      "provider": "LabCorp",
+      "result": "See lab results",
+      "cpt_code": "80053"
+    }
+  ],
+  "encounters": [
+    {
+      "encounter_id": "ENC-2025-0601",
+      "date": "2025-06-01",
+      "type": "Office Visit",
+      "provider": "Dr. Smith (Internal Medicine)",
+      "reason": "Routine diabetes and hypertension follow-up",
+      "notes": "Patient reports occasional dizziness. HbA1c remains elevated despite medication compliance. Discussed lifestyle modifications and potential medication adjustment.",
+      "follow_up": "Return in 3 months for repeat labs"
+    },
+    {
+      "encounter_id": "ENC-2025-0115",
+      "date": "2025-01-15",
+      "type": "Specialist Visit",
+      "provider": "Dr. Patel (Ophthalmology)",
+      "reason": "Annual diabetic eye screening",
+      "notes": "No signs of diabetic retinopathy. Continue annual monitoring.",
+      "follow_up": "Annual follow-up in 12 months"
+    }
+  ]
+}
