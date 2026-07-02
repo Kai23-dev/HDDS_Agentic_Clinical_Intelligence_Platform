@@ -103,6 +103,37 @@ def build_response(patients_data: list) -> dict:
     return output
 
 
+# ---- Security / Auth ----
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi import Depends
+
+security = HTTPBearer()
+
+MOCK_USERS = {
+    "doctor@ey.com": {"password": "password123", "role": "doctor", "name": "Dr. Smith"},
+    "admin@ey.com": {"password": "admin", "role": "admin", "name": "System Admin"}
+}
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+@app.post("/api/login")
+def login(request: LoginRequest):
+    user = MOCK_USERS.get(request.email)
+    if not user or user["password"] != request.password:
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    
+    # Mock JWT token for prototype
+    token = f"mock-jwt-token-{request.email}-{user['role']}"
+    return {"access_token": token, "role": user["role"], "name": user["name"]}
+
+def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    token = credentials.credentials
+    if not token.startswith("mock-jwt-token-"):
+        raise HTTPException(status_code=401, detail="Invalid token")
+    return token
+
 # ---- Routes ----
 
 @app.get("/")
@@ -113,9 +144,8 @@ def health_check():
         "version": "2.0.0",
     }
 
-
 @app.get("/api/insights")
-def get_insights():
+def get_insights(token: str = Depends(verify_token)):
     """Return the latest generated insights."""
     if not os.path.exists(OUTPUT_JSON):
         raise HTTPException(
@@ -131,7 +161,7 @@ class ChatRequest(BaseModel):
     question: str
 
 @app.post("/api/chat")
-def chat_with_patient(request: ChatRequest):
+def chat_with_patient(request: ChatRequest, token: str = Depends(verify_token)):
     """Chat with a specific patient's data."""
     if not os.path.exists(OUTPUT_JSON):
         raise HTTPException(status_code=404, detail="No patient data loaded.")
@@ -183,7 +213,7 @@ def chat_with_patient(request: ChatRequest):
     return {"answer": answer}
 
 @app.post("/api/run-sample")
-def run_sample_data():
+def run_sample_data(token: str = Depends(verify_token)):
     """Run the pipeline on the built-in sample patients."""
     with open(SAMPLE_ALL, "r", encoding="utf-8") as f:
         patients = json.load(f)
@@ -192,7 +222,7 @@ def run_sample_data():
     return build_response(patients)
 
 @app.post("/api/load-synthea")
-def load_synthea_data():
+def load_synthea_data(token: str = Depends(verify_token)):
     """Run the pipeline on the parsed Synthea dataset."""
     from data_ingestion.synthea_parser import process_synthea_data
     output_path = process_synthea_data()
@@ -204,7 +234,7 @@ def load_synthea_data():
     return build_response(patients)
 
 @app.post("/api/upload")
-async def upload_file(file: UploadFile = File(...)):
+async def upload_file(file: UploadFile = File(...), token: str = Depends(verify_token)):
     """
     Upload a patient document. Accepts:
       - .pdf files (parsed as text, then mapped to profile - prototype)

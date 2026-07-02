@@ -12,14 +12,27 @@ import Header from './components/Header';
 import UploadView from './components/UploadView';
 import ProcessingView from './components/ProcessingView';
 import ResultsView from './components/ResultsView';
+import LoginView from './components/LoginView';
 
 const API_URL = 'http://127.0.0.1:8000';
 
 function App() {
-  // 'upload' | 'processing' | 'results' | 'error'
-  const [view, setView] = useState('upload');
+  // 'login' | 'upload' | 'processing' | 'results' | 'error'
+  const [view, setView] = useState('login');
   const [resultsData, setResultsData] = useState(null);
   const [errorMsg, setErrorMsg] = useState('');
+  const [authData, setAuthData] = useState(null);
+
+  const handleLogin = (data) => {
+    setAuthData(data);
+    setView('upload');
+  };
+
+  const handleLogout = () => {
+    setAuthData(null);
+    setResultsData(null);
+    setView('login');
+  };
 
   const handleProcessStart = async (input) => {
     setView('processing');
@@ -28,18 +41,19 @@ function App() {
     try {
       let response;
 
+      const headers = {
+        'Authorization': `Bearer ${authData?.access_token}`
+      };
+
       if (input.type === 'sample') {
-        // Use sample data endpoint
-        response = await axios.post(`${API_URL}/api/run-sample`);
+        response = await axios.post(`${API_URL}/api/run-sample`, null, { headers });
       } else if (input.type === 'synthea') {
-        // Use Synthea data endpoint
-        response = await axios.post(`${API_URL}/api/load-synthea`);
+        response = await axios.post(`${API_URL}/api/load-synthea`, null, { headers });
       } else if (input.type === 'upload' && input.file) {
-        // Upload file
         const formData = new FormData();
         formData.append('file', input.file);
         response = await axios.post(`${API_URL}/api/upload`, formData, {
-          headers: { 'Content-Type': 'multipart/form-data' },
+          headers: { ...headers, 'Content-Type': 'multipart/form-data' },
         });
       }
 
@@ -60,8 +74,13 @@ function App() {
     setResultsData(null);
   };
 
+  if (view === 'login') {
+    return <LoginView onLogin={handleLogin} />;
+  }
+
   return (
     <div className="min-h-screen bg-[#f8f9fa]">
+      {/* Modify Header manually later if we want to add logout, but for now just pass role */}
       <Header />
 
       {view === 'upload' && (
@@ -73,7 +92,12 @@ function App() {
       )}
 
       {view === 'results' && resultsData && (
-        <ResultsView data={resultsData} onBack={handleBack} />
+        <ResultsView 
+          data={resultsData} 
+          onBack={handleBack} 
+          token={authData?.access_token} 
+          role={authData?.role}
+        />
       )}
 
       {view === 'error' && (

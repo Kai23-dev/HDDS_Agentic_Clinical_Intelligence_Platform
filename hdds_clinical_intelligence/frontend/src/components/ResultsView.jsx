@@ -44,7 +44,7 @@ function Section({ title, icon, children, defaultOpen = true }) {
   );
 }
 
-export default function ResultsView({ data, onBack }) {
+export default function ResultsView({ data, onBack, token, role }) {
   const [selectedIdx, setSelectedIdx] = useState(0);
   
   // Chat state
@@ -69,7 +69,10 @@ export default function ResultsView({ data, onBack }) {
       // Depending on how Axios is configured globally in App, we use native fetch here for simplicity
       const response = await fetch('http://127.0.0.1:8000/api/chat', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({ patient_id: pid, question: userMessage })
       });
       const result = await response.json();
@@ -98,6 +101,11 @@ export default function ResultsView({ data, onBack }) {
           <ArrowLeft className="w-4 h-4" /> Upload new document
         </button>
         <div className="flex items-center gap-4">
+          {role === 'admin' && (
+            <button className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded transition-colors">
+              <ShieldAlert className="w-3.5 h-3.5" /> Admin Settings
+            </button>
+          )}
           <button 
             onClick={() => window.print()}
             className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded transition-colors"
