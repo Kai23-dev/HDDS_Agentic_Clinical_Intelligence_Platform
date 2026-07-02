@@ -1,26 +1,136 @@
 # HDDS Agentic Clinical Intelligence Platform
 
-A beginner-friendly clinical intelligence prototype that uses **synthetic healthcare data**, rule-based extraction/harmonization, and **AI agents** to generate clinician-reviewable medical insights.
+A full-stack clinical intelligence prototype that uses **synthetic healthcare data**, rule-based extraction/harmonization, and **AI agents** to generate clinician-reviewable medical insights — served through a **FastAPI** backend and visualized on a **React + Tailwind CSS** dashboard.
 
-> **⚠️ Responsible AI Note:** All outputs are generated for prototype purposes only and are intended for clinician review. This is not a final diagnosis or treatment decision.
-
----
-
-## Project Objective
-
-Build an HDDS-style clinical intelligence prototype that demonstrates how multi-agent AI pipelines can analyze patient data and produce structured, traceable medical insights — all using **synthetic/sample data only**.
-
-No company data, client data, real patient data, internal GDX details, secrets, or tokens are used anywhere in this project.
+> **Responsible AI Note:** All outputs are generated for prototype/demo purposes only and are intended for clinician review. This is not a final diagnosis or treatment decision.
 
 ---
 
-## Current Prototype Scope
+## Tech Stack
 
-- **Data:** 3 synthetic patient profiles covering different clinical scenarios (diabetes, heart failure, anemia)
-- **Agents:** Six rule-based agents that process patient data and produce structured outputs
-- **Output:** Combined JSON file (`ai_medical_insights.json`) with all agent results
-- **Backend (API):** FastAPI server that serves the generated insights
-- **Frontend (UI):** React 18 + Vite + Tailwind CSS dashboard
+| Layer | Technology |
+|-------|------------|
+| **AI Agents** | Python 3.8+ (standard library) |
+| **Backend API** | FastAPI + Uvicorn |
+| **Frontend UI** | React 18 + Vite + Tailwind CSS |
+| **Data** | Synthetic JSON (no real patient data) |
+
+---
+
+## Quick Start (Clone & Run)
+
+### Prerequisites
+- Python 3.8+ installed
+- Node.js 18+ and npm installed
+- Git installed
+
+### Step-by-step
+
+```bash
+# 1. Clone the repo
+git clone https://github.com/Kai23-dev/HDDS_Agentic_Clinical_Intelligence_Platform.git
+cd HDDS_Agentic_Clinical_Intelligence_Platform/hdds_clinical_intelligence
+
+# 2. Install Python dependencies
+pip install -r requirements.txt
+
+# 3. Run the AI agent pipeline to generate insights
+python run_hdds_prototype.py --all
+
+# 4. Start the FastAPI backend (Terminal 1)
+#    IMPORTANT: Run this from the hdds_clinical_intelligence/ folder
+python api.py
+
+# 5. Start the React frontend (Terminal 2)
+cd frontend
+npm install
+npm run dev
+```
+
+Then open **http://localhost:5173** in your browser.
+
+### One-command start (Git Bash / macOS / Linux)
+
+```bash
+cd hdds_clinical_intelligence
+bash start.sh
+```
+
+---
+
+## Project Structure
+
+```
+HDDS_Agentic_Clinical_Intelligence_Platform/
+|-- README.md                          # Root overview
+|-- hdds_clinical_intelligence/        # Main project folder
+    |-- api.py                         # FastAPI backend server
+    |-- run_hdds_prototype.py          # AI agent pipeline runner
+    |-- requirements.txt               # Python dependencies
+    |-- start.sh                       # One-command startup script
+    |
+    |-- agents/                        # 6 AI agent modules
+    |   |-- __init__.py
+    |   |-- clinical_summary_agent.py
+    |   |-- risk_assessment_agent.py
+    |   |-- early_detection_agent.py
+    |   |-- recommendation_agent.py
+    |   |-- evidence_validation_agent.py
+    |   |-- followup_action_agent.py
+    |
+    |-- data/
+    |   |-- processed/
+    |   |   |-- patient_profile.json   # Single patient (default)
+    |   |   |-- all_patients.json      # All 3 synthetic patients
+    |   |-- raw/                       # For future raw data
+    |   |-- sample_notes/              # For future clinical notes
+    |
+    |-- frontend/                      # React + Vite + Tailwind CSS
+    |   |-- src/
+    |   |   |-- App.jsx                # Main dashboard component
+    |   |   |-- index.css              # Tailwind + custom styles
+    |   |   |-- main.jsx               # React entry point
+    |   |-- package.json
+    |   |-- tailwind.config.js
+    |   |-- vite.config.js
+    |
+    |-- outputs/                       # Generated AI insights
+    |   |-- ai_medical_insights.json
+    |
+    |-- docs/                          # Design documentation
+    |   |-- architecture.md
+    |   |-- prototype_roadmap.md
+    |   |-- responsible_ai_notes.md
+    |
+    |-- extraction/                    # Schema & reference docs
+        |-- extraction_schema.json
+        |-- azure_health_nlp_optional.md
+        |-- gdx_extraction_reference.md
+```
+
+---
+
+## Agent Pipeline
+
+The runner executes 6 agents sequentially on each patient profile:
+
+```
+Patient JSON --> [1] Clinical Summary
+             --> [2] Risk Assessment (Low / Medium / High)
+             --> [3] Early Detection (flag abnormal labs)
+             --> [4] Recommendations (clinician-review drafts)
+             --> [5] Evidence Validation (trace assertions to source)
+             --> [6] Follow-up Actions (prioritized next steps)
+             --> ai_medical_insights.json --> FastAPI --> React Dashboard
+```
+
+### Runner CLI options
+
+```bash
+python run_hdds_prototype.py              # Single default patient
+python run_hdds_prototype.py --all        # All 3 patients
+python run_hdds_prototype.py --patient SYNTH-002   # Specific patient
+```
 
 ---
 
@@ -34,54 +144,54 @@ No company data, client data, real patient data, internal GDX details, secrets, 
 
 ---
 
-## How to Run
+## API Endpoints
 
-### 1. Run the AI Agent Pipeline
-Generate the insights JSON file (requires standard Python 3.8+).
-
-```bash
-cd hdds_clinical_intelligence
-python run_hdds_prototype.py --all
-```
-
-### 2. Start the FastAPI Backend
-Serve the insights via REST API on `localhost:8000`.
-
-```bash
-cd hdds_clinical_intelligence
-pip install fastapi uvicorn
-uvicorn api:app --reload
-```
-
-### 3. Start the React Frontend
-Run the Vite development server for the dashboard on `localhost:5173`.
-
-```bash
-cd hdds_clinical_intelligence/frontend
-npm install
-npm run dev
-```
-
-Then open `http://localhost:5173` in your browser.
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/` | Health check |
+| GET | `/api/insights` | Returns full AI insights JSON |
 
 ---
 
-## Folder Structure
+## Troubleshooting
 
+### "Could not import module api"
+You are running `uvicorn` from the **wrong directory**. Make sure you are inside `hdds_clinical_intelligence/` (where `api.py` lives), not the root folder or `frontend/`.
+
+```bash
+cd hdds_clinical_intelligence
+uvicorn api:app --reload
 ```
-hdds_clinical_intelligence/
-├── agents/                        # AI Agent logic
-├── api.py                         # FastAPI server
-├── data/                          # Synthetic patient JSON data
-├── docs/                          # Architecture & design docs
-├── extraction/                    # Schema definitions
-├── frontend/                      # React + Vite application
-│   ├── src/
-│   │   ├── App.jsx                # Main dashboard UI
-│   │   └── index.css              # Tailwind + custom CSS
-│   ├── package.json
-│   └── tailwind.config.js
-├── outputs/                       # Generated insights JSON
-├── run_hdds_prototype.py          # Main AI runner script
-└── README.md
+
+Or simply use:
+```bash
+python api.py
 ```
+
+### Frontend shows "Connection Error"
+The FastAPI backend is not running. Start it first in a separate terminal (see Quick Start above).
+
+### "Insights JSON not found"
+You haven't generated the insights yet. Run the pipeline first:
+```bash
+python run_hdds_prototype.py --all
+```
+
+---
+
+## Future Roadmap
+
+- [ ] Synthea CSV extraction for realistic patient populations
+- [ ] NLP-based clinical note extraction (Azure Health NLP)
+- [ ] FHIR-compatible data formats
+- [ ] User authentication & role-based access
+- [ ] Patient comparison view on the dashboard
+- [ ] Export to PDF report generation
+
+---
+
+## Requirements
+
+- Python 3.8+
+- Node.js 18+ / npm
+- No database needed — all data is JSON-based
