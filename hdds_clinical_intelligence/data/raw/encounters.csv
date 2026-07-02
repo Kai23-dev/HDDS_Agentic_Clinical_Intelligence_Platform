@@ -1,0 +1,3 @@
+Id,PATIENT,START,ENCOUNTERCLASS,REASONDESCRIPTION
+enc-001,pat-001,2023-10-01,inpatient,Acute myocardial infarction
+enc-002,pat-002,2023-10-10,inpatient,Diabetic ketoacidosis

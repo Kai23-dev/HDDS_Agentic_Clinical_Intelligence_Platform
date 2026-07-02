@@ -124,17 +124,35 @@ export default function ResultsView({ data, onBack }) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <p className="text-xs text-gray-400 font-medium uppercase mb-2">Active Conditions</p>
-              <div className="flex flex-wrap gap-1.5">
+              <div className="space-y-2">
                 {ar.clinical_summary.active_conditions.map((c, i) => (
-                  <span key={i} className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">{c}</span>
+                  <div key={i} className="text-xs bg-gray-50 border border-gray-100 p-2 rounded flex justify-between items-center group">
+                    <div>
+                      <span className="text-gray-700 font-medium">{c}</span>
+                      <span className="ml-2 text-[9px] text-gray-400 uppercase bg-gray-200 px-1 rounded">Source: conditions.csv</span>
+                    </div>
+                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button className="px-1.5 py-0.5 bg-green-100 text-green-700 rounded border border-green-200 hover:bg-green-200">✓</button>
+                      <button className="px-1.5 py-0.5 bg-red-100 text-red-700 rounded border border-red-200 hover:bg-red-200">✕</button>
+                    </div>
+                  </div>
                 ))}
               </div>
             </div>
             <div>
               <p className="text-xs text-gray-400 font-medium uppercase mb-2">Current Medications</p>
-              <div className="flex flex-wrap gap-1.5">
+              <div className="space-y-2">
                 {ar.clinical_summary.current_medications.map((m, i) => (
-                  <span key={i} className="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded">{m}</span>
+                  <div key={i} className="text-xs bg-blue-50 border border-blue-100 p-2 rounded flex justify-between items-center group">
+                    <div>
+                      <span className="text-blue-800 font-medium">{m}</span>
+                      <span className="ml-2 text-[9px] text-blue-400 uppercase bg-blue-100 px-1 rounded">Source: medications.csv</span>
+                    </div>
+                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button className="px-1.5 py-0.5 bg-green-100 text-green-700 rounded border border-green-200 hover:bg-green-200">✓</button>
+                      <button className="px-1.5 py-0.5 bg-red-100 text-red-700 rounded border border-red-200 hover:bg-red-200">✕</button>
+                    </div>
+                  </div>
                 ))}
               </div>
             </div>
@@ -192,16 +210,31 @@ export default function ResultsView({ data, onBack }) {
         <Section title="Treatment Recommendations" icon={<CheckCircle className="w-4 h-4 text-green-500" />} defaultOpen={true}>
           <div className="space-y-3">
             {ar.recommendations.recommendations && ar.recommendations.recommendations.map((rec, i) => (
-              <div key={i} className="border border-gray-100 rounded-lg p-3 flex gap-3">
-                <div className="flex-shrink-0 mt-0.5">
-                  <TrendingUp className="w-4 h-4 text-green-500" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-700">{rec.recommendation}</p>
-                  <div className="flex gap-3 mt-1.5">
-                    <span className="text-[10px] text-gray-400 uppercase">{rec.category}</span>
-                    <span className="text-[10px] text-[#b8a800] font-semibold uppercase">{rec.priority}</span>
+              <div key={i} className="border border-gray-100 rounded-lg p-3 flex justify-between items-start">
+                <div className="flex gap-3">
+                  <div className="flex-shrink-0 mt-0.5">
+                    <TrendingUp className="w-4 h-4 text-green-500" />
                   </div>
+                  <div>
+                    <p className="text-sm text-gray-700">{rec.recommendation}</p>
+                    <div className="flex gap-3 mt-1.5 items-center">
+                      <span className="text-[10px] text-gray-400 uppercase">{rec.category}</span>
+                      <span className="text-[10px] text-[#b8a800] font-semibold uppercase">{rec.priority}</span>
+                      {rec.source && (
+                        <span className="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">
+                          Source: {rec.source}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex flex-col gap-1.5 ml-4">
+                  <button className="text-xs px-3 py-1 bg-green-50 text-green-600 hover:bg-green-100 rounded font-medium border border-green-200 whitespace-nowrap">
+                    Accept
+                  </button>
+                  <button className="text-xs px-3 py-1 bg-red-50 text-red-600 hover:bg-red-100 rounded font-medium border border-red-200 whitespace-nowrap">
+                    Reject
+                  </button>
                 </div>
               </div>
             ))}

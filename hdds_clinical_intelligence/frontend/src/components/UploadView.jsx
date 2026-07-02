@@ -149,7 +149,14 @@ export default function UploadView({ onProcessStart }) {
           onClick={handleSampleData}
           className="px-6 py-3 rounded-lg font-semibold text-sm border border-gray-300 text-gray-600 hover:bg-gray-50 flex items-center gap-2 justify-center"
         >
-          <Database className="w-4 h-4" /> Use Sample Patient Data
+          <Database className="w-4 h-4" /> Use Sample Data
+        </button>
+
+        <button
+          onClick={() => onProcessStart({ type: 'synthea' })}
+          className="px-6 py-3 rounded-lg font-semibold text-sm border border-gray-300 text-blue-600 hover:bg-blue-50 flex items-center gap-2 justify-center"
+        >
+          <Database className="w-4 h-4" /> Load Synthea Dataset
         </button>
       </div>
 

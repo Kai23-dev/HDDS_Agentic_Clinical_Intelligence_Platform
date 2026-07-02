@@ -31,6 +31,9 @@ function App() {
       if (input.type === 'sample') {
         // Use sample data endpoint
         response = await axios.post(`${API_URL}/api/run-sample`);
+      } else if (input.type === 'synthea') {
+        // Use Synthea data endpoint
+        response = await axios.post(`${API_URL}/api/load-synthea`);
       } else if (input.type === 'upload' && input.file) {
         // Upload file
         const formData = new FormData();

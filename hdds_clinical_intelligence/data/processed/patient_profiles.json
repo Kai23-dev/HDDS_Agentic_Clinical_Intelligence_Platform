@@ -1,0 +1,94 @@
+{
+  "patients": [
+    {
+      "patient_id": "pat-001",
+      "patient_name": "John Smith",
+      "demographics": {
+        "age": 69,
+        "gender": "M",
+        "source": "patients.csv"
+      },
+      "medical_history": [
+        {
+          "condition": "Hypertension",
+          "status": "Active",
+          "diagnosis_date": "2015-01-10",
+          "source": "conditions.csv"
+        },
+        {
+          "condition": "Type 2 Diabetes Mellitus",
+          "status": "Active",
+          "diagnosis_date": "2018-05-22",
+          "source": "conditions.csv"
+        }
+      ],
+      "medications": [
+        {
+          "name": "Metformin 500mg",
+          "status": "Active",
+          "prescribed_date": "2023-10-01",
+          "reason": "Type 2 Diabetes Mellitus",
+          "source": "medications.csv"
+        },
+        {
+          "name": "Lisinopril 10mg",
+          "status": "Active",
+          "prescribed_date": "2023-10-01",
+          "reason": "Hypertension",
+          "source": "medications.csv"
+        }
+      ],
+      "lab_results": [
+        {
+          "test_name": "Hemoglobin A1c",
+          "value": "8.5",
+          "unit": "%",
+          "date": "2023-10-02",
+          "source": "observations.csv"
+        },
+        {
+          "test_name": "Systolic Blood Pressure",
+          "value": "145",
+          "unit": "mmHg",
+          "date": "2023-10-02",
+          "source": "observations.csv"
+        }
+      ]
+    },
+    {
+      "patient_id": "pat-002",
+      "patient_name": "Maria Garcia",
+      "demographics": {
+        "age": 84,
+        "gender": "F",
+        "source": "patients.csv"
+      },
+      "medical_history": [
+        {
+          "condition": "Chronic Kidney Disease",
+          "status": "Active",
+          "diagnosis_date": "2020-03-15",
+          "source": "conditions.csv"
+        }
+      ],
+      "medications": [
+        {
+          "name": "Insulin Glargine 100u/mL",
+          "status": "Active",
+          "prescribed_date": "2023-10-10",
+          "reason": "Diabetes",
+          "source": "medications.csv"
+        }
+      ],
+      "lab_results": [
+        {
+          "test_name": "eGFR",
+          "value": "45",
+          "unit": "mL/min/1.73m2",
+          "date": "2023-10-11",
+          "source": "observations.csv"
+        }
+      ]
+    }
+  ]
+}

@@ -136,6 +136,17 @@ def run_sample_data():
         patients = [patients]
     return build_response(patients)
 
+@app.post("/api/load-synthea")
+def load_synthea_data():
+    """Run the pipeline on the parsed Synthea dataset."""
+    from data_ingestion.synthea_parser import process_synthea_data
+    output_path = process_synthea_data()
+    with open(output_path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    patients = data.get("patients", [])
+    if not patients:
+        raise HTTPException(status_code=400, detail="No patients found in Synthea data.")
+    return build_response(patients)
 
 @app.post("/api/upload")
 async def upload_file(file: UploadFile = File(...)):

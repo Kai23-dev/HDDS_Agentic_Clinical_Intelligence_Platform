@@ -1,0 +1,4 @@
+DATE,PATIENT,ENCOUNTER,DESCRIPTION,VALUE,UNITS
+2023-10-02,pat-001,enc-001,Hemoglobin A1c,8.5,%
+2023-10-02,pat-001,enc-001,Systolic Blood Pressure,145,mmHg
+2023-10-11,pat-002,enc-002,eGFR,45,mL/min/1.73m2
