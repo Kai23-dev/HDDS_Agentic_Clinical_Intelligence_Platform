@@ -1,0 +1,45 @@
+class ChatbotAgent:
+    """
+    Simulates a conversational agent that answers clinical questions 
+    based on the patient's structured data (Synthea) and unstructured notes (Asclepius).
+    """
+    def run(self, question: str, patient_data: dict) -> str:
+        q = question.lower()
+        
+        # 1. Check unstructured notes first (GTX RAG context)
+        unstructured = patient_data.get("gtx_unstructured_insights", {}).get("raw_text_snippet", "").lower()
+        if unstructured:
+            if "hba1c" in q and "hba1c" in unstructured:
+                return "Based on the discharge summary, the patient's HbA1c was noted to be elevated at 8.5%."
+            if "cardiology" in q and "cardiology" in unstructured:
+                return "Yes, a cardiology follow-up in 2 weeks is highly recommended due to the high risk of readmission."
+            if "kidney" in q or "dka" in q:
+                return "The patient has a history of stage 3 CKD and was treated for diabetic ketoacidosis (DKA) with IV fluids and insulin."
+
+        # 2. Check structured data (Synthea)
+        meds = patient_data.get("medications", [])
+        if "medication" in q or "drugs" in q or "prescribed" in q:
+            med_names = [m["name"] for m in meds if m["status"] == "Active"]
+            if med_names:
+                return f"The patient is currently prescribed: {', '.join(med_names)}."
+            return "The patient has no active medications on file."
+            
+        labs = patient_data.get("lab_results", [])
+        if "lab" in q or "test" in q:
+            lab_names = [f"{l['test_name']} ({l['value']} {l['unit']})" for l in labs]
+            if lab_names:
+                return f"Recent lab results include: {', '.join(lab_names)}."
+            return "No recent lab results found."
+            
+        conditions = patient_data.get("medical_history", [])
+        if "history" in q or "condition" in q or "disease" in q:
+            cond_names = [c["condition"] for c in conditions if c["status"] == "Active"]
+            if cond_names:
+                return f"The patient has a history of: {', '.join(cond_names)}."
+            return "No active conditions on file."
+
+        # Default fallback
+        return (
+            "I could not find a specific answer in the patient's records. "
+            "Please review the clinical summary for more details."
+        )

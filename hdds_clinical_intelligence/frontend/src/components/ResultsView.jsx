@@ -5,7 +5,8 @@
 import { useState } from 'react';
 import {
   ArrowLeft, User, ShieldAlert, AlertTriangle,
-  CheckCircle, Clock, FileText, TrendingUp, ChevronDown, ChevronUp
+  CheckCircle, Clock, FileText, TrendingUp, ChevronDown, ChevronUp,
+  MessageSquare, X, Send, Loader2
 } from 'lucide-react';
 
 // helper: risk level badge color
@@ -45,6 +46,40 @@ function Section({ title, icon, children, defaultOpen = true }) {
 
 export default function ResultsView({ data, onBack }) {
   const [selectedIdx, setSelectedIdx] = useState(0);
+  
+  // Chat state
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [chatMessages, setChatMessages] = useState([
+    { role: 'assistant', content: 'Hello doctor. I have analyzed this patient. What would you like to know?' }
+  ]);
+  const [chatInput, setChatInput] = useState('');
+  const [isChatLoading, setIsChatLoading] = useState(false);
+
+  const handleSendChat = async (e) => {
+    e.preventDefault();
+    if (!chatInput.trim()) return;
+
+    const userMessage = chatInput;
+    setChatMessages(prev => [...prev, { role: 'user', content: userMessage }]);
+    setChatInput('');
+    setIsChatLoading(true);
+
+    try {
+      const pid = data.patients[selectedIdx].patient_id;
+      // Depending on how Axios is configured globally in App, we use native fetch here for simplicity
+      const response = await fetch('http://127.0.0.1:8000/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ patient_id: pid, question: userMessage })
+      });
+      const result = await response.json();
+      setChatMessages(prev => [...prev, { role: 'assistant', content: result.answer || 'Error getting response.' }]);
+    } catch (err) {
+      setChatMessages(prev => [...prev, { role: 'assistant', content: 'Network error communicating with Chat Agent.' }]);
+    } finally {
+      setIsChatLoading(false);
+    }
+  };
 
   if (!data || !data.patients || data.patients.length === 0) return null;
 
@@ -267,6 +302,69 @@ export default function ResultsView({ data, onBack }) {
           <strong>Responsible AI Notice:</strong> {meta.responsible_ai_note}
         </p>
       </div>
+
+      {/* Floating Chatbot UI */}
+      {isChatOpen ? (
+        <div className="fixed bottom-6 right-6 w-80 sm:w-96 bg-white rounded-xl shadow-2xl border border-gray-200 flex flex-col overflow-hidden z-50">
+          <div className="bg-[#2e2e38] px-4 py-3 flex justify-between items-center">
+            <div className="flex items-center gap-2">
+              <MessageSquare className="w-5 h-5 text-[#ffe600]" />
+              <h3 className="font-semibold text-white">Clinical Assistant</h3>
+            </div>
+            <button onClick={() => setIsChatOpen(false)} className="text-gray-400 hover:text-white">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+          
+          <div className="flex-1 p-4 overflow-y-auto bg-gray-50 h-80 flex flex-col gap-3">
+            {chatMessages.map((msg, i) => (
+              <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                <div className={`max-w-[85%] p-3 rounded-lg text-sm ${
+                  msg.role === 'user' 
+                    ? 'bg-[#ffe600] text-[#2e2e38] rounded-br-none' 
+                    : 'bg-white border border-gray-200 text-gray-700 rounded-bl-none shadow-sm'
+                }`}>
+                  {msg.content}
+                </div>
+              </div>
+            ))}
+            {isChatLoading && (
+              <div className="flex justify-start">
+                <div className="bg-white border border-gray-200 text-gray-500 rounded-lg rounded-bl-none p-3 shadow-sm">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                </div>
+              </div>
+            )}
+          </div>
+          
+          <div className="p-3 border-t border-gray-200 bg-white">
+            <form onSubmit={handleSendChat} className="flex items-center gap-2">
+              <input
+                type="text"
+                value={chatInput}
+                onChange={e => setChatInput(e.target.value)}
+                placeholder="Ask about this patient..."
+                className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#ffe600]"
+              />
+              <button 
+                type="submit" 
+                disabled={!chatInput.trim() || isChatLoading}
+                className="bg-[#2e2e38] text-white p-2 rounded-lg hover:bg-black disabled:opacity-50"
+              >
+                <Send className="w-4 h-4" />
+              </button>
+            </form>
+          </div>
+        </div>
+      ) : (
+        <button
+          onClick={() => setIsChatOpen(true)}
+          className="fixed bottom-6 right-6 bg-[#2e2e38] text-white p-4 rounded-full shadow-xl hover:bg-black transition-transform hover:scale-105 z-50 flex items-center justify-center"
+        >
+          <MessageSquare className="w-6 h-6 text-[#ffe600]" />
+        </button>
+      )}
+
     </div>
   );
 }

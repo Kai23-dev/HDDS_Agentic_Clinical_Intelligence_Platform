@@ -125,6 +125,46 @@ def get_insights():
     with open(OUTPUT_JSON, "r", encoding="utf-8") as f:
         return json.load(f)
 
+from pydantic import BaseModel
+class ChatRequest(BaseModel):
+    patient_id: str
+    question: str
+
+@app.post("/api/chat")
+def chat_with_patient(request: ChatRequest):
+    """Chat with a specific patient's data."""
+    if not os.path.exists(OUTPUT_JSON):
+        raise HTTPException(status_code=404, detail="No patient data loaded.")
+        
+    with open(OUTPUT_JSON, "r", encoding="utf-8") as f:
+        insights_data = json.load(f)
+        
+    # In a real app we'd fetch the raw patient profile from DB, 
+    # but here we can just reload the Synthea output or find it.
+    from data_ingestion.synthea_parser import process_synthea_data
+    from agents.chat_agent import ChatbotAgent
+    
+    # We load the processed synthea profiles to get raw data
+    patients_file = os.path.join(PROJECT_ROOT, "data", "processed", "patient_profiles.json")
+    if not os.path.exists(patients_file):
+        raise HTTPException(status_code=404, detail="No raw patient profiles found.")
+        
+    with open(patients_file, "r", encoding="utf-8") as f:
+        profiles = json.load(f).get("patients", [])
+        
+    patient_data = next((p for p in profiles if p["patient_id"] == request.patient_id), None)
+    if not patient_data:
+        raise HTTPException(status_code=404, detail=f"Patient {request.patient_id} not found.")
+        
+    # Inject GTX notes for the chat agent
+    from gtx_rag_system import GTXRagSystem
+    gtx = GTXRagSystem()
+    patient_data["gtx_unstructured_insights"] = gtx.extract_information(request.patient_id)
+
+    agent = ChatbotAgent()
+    answer = agent.run(request.question, patient_data)
+    
+    return {"answer": answer}
 
 @app.post("/api/run-sample")
 def run_sample_data():
