@@ -53,6 +53,8 @@ def process_synthea_data():
         for m in pat_meds:
             med_list.append({
                 "name": m['DESCRIPTION'],
+                "dosage": "",
+                "frequency": "",
                 "status": "Active" if not m.get('STOP') else "Discontinued",
                 "prescribed_date": m.get('START', ''),
                 "reason": m.get('REASONDESCRIPTION', ''),

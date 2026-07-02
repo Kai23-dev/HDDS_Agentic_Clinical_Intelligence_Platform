@@ -57,27 +57,26 @@ RESPONSIBLE_AI_NOTE = (
 )
 
 
-def run_agents_on_patient(patient_data: dict) -> dict:
-    """Run all 6 agents on a single patient and return results."""
-    outputs = {}
-
-    outputs["clinical_summary"] = ClinicalSummaryAgent().run(patient_data)
-    outputs["risk_assessment"] = RiskAssessmentAgent().run(patient_data)
-    outputs["early_detection"] = EarlyDetectionAgent().run(patient_data)
-    outputs["recommendations"] = RecommendationAgent().run(patient_data)
-    outputs["evidence_validation"] = EvidenceValidationAgent().run(patient_data, outputs)
-    outputs["followup_actions"] = FollowupActionAgent().run(patient_data, outputs)
-
-    return outputs
-
+from agents.orchestrator_agent import OrchestratorAgent
 
 def build_response(patients_data: list) -> dict:
-    """Process a list of patients and build the final response."""
+    """Process a list of patients and build the final response via Orchestrator."""
     results = []
+    orchestrator = OrchestratorAgent()
+    
     for patient in patients_data:
-        pid = patient.get("patient_profile", {}).get("patient_id", "N/A")
-        name = patient.get("patient_profile", {}).get("name", "Unknown")
-        agent_results = run_agents_on_patient(patient)
+        # Some sample data formats wrap the patient in "patient_profile"
+        if "patient_profile" in patient:
+            profile_data = patient["patient_profile"]
+        else:
+            profile_data = patient
+            
+        pid = profile_data.get("patient_id", "N/A")
+        name = profile_data.get("patient_name", profile_data.get("name", "Unknown"))
+        
+        # Run through orchestrator
+        agent_results = orchestrator.process_patient(profile_data)
+        
         results.append({
             "patient_id": pid,
             "patient_name": name,
@@ -87,9 +86,9 @@ def build_response(patients_data: list) -> dict:
     output = {
         "metadata": {
             "project": "HDDS Agentic Clinical Intelligence Platform",
-            "version": "2.0.0-prototype",
+            "version": "3.0.0-orchestrator",
             "generated_at": datetime.now().isoformat(),
-            "data_source": "Synthetic sample data (not real patient data)",
+            "data_source": "Synthea & Asclepius (GTX RAG)",
             "total_patients_processed": len(results),
             "responsible_ai_note": RESPONSIBLE_AI_NOTE,
         },
