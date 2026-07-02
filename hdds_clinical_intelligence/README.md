@@ -16,10 +16,21 @@ No company data, client data, real patient data, internal GDX details, secrets, 
 
 ## Current Prototype Scope
 
-- **Data:** Synthetic patient profile (`patient_profile.json`) with conditions, medications, labs, procedures, and encounters.
-- **Agents:** Six rule-based agents that process patient data and produce structured outputs.
-- **Output:** Combined JSON file (`ai_medical_insights.json`) with all agent results.
+- **Data:** 3 synthetic patient profiles covering different clinical scenarios (diabetes, heart failure, anemia)
+- **Agents:** Six rule-based agents that process patient data and produce structured outputs
+- **Output:** Combined JSON file (`ai_medical_insights.json`) with all agent results
+- **Dashboard:** Auto-generated HTML dashboard for visual insights review
 - **Dependencies:** Python standard library + JSON only. No external packages required.
+
+---
+
+## Sample Patients
+
+| ID | Name | Age | Conditions | Expected Risk |
+|----|------|-----|------------|---------------|
+| SYNTH-001 | John Doe | 58/M | Type 2 Diabetes, Hypertension | High |
+| SYNTH-002 | Maria Garcia | 72/F | CHF, AFib, CKD Stage 3, Osteoarthritis | High |
+| SYNTH-003 | Emily Chen | 34/F | Asthma, Iron Deficiency Anemia | Low |
 
 ---
 
@@ -55,7 +66,36 @@ patient_profile.json
          │
          ▼
   ai_medical_insights.json
+         │
+         ▼
+  clinical_dashboard.html
 ```
+
+---
+
+## How to Run
+
+### Single Patient (Default)
+```bash
+cd hdds_clinical_intelligence
+python run_hdds_prototype.py
+```
+
+### All Patients
+```bash
+python run_hdds_prototype.py --all
+```
+
+### Specific Patient
+```bash
+python run_hdds_prototype.py --patient SYNTH-002
+```
+
+### Generate Dashboard
+```bash
+python dashboard/generate_dashboard.py
+```
+Then open `dashboard/clinical_dashboard.html` in your browser.
 
 ---
 
@@ -74,7 +114,8 @@ hdds_clinical_intelligence/
 ├── data/
 │   ├── raw/                       # Placeholder for future raw data
 │   ├── processed/
-│   │   └── patient_profile.json   # Synthetic sample patient
+│   │   ├── patient_profile.json   # Single synthetic patient
+│   │   └── all_patients.json      # All 3 synthetic patients
 │   └── sample_notes/              # Placeholder for clinical notes
 ├── docs/
 │   ├── architecture.md
@@ -86,7 +127,9 @@ hdds_clinical_intelligence/
 │   └── gdx_extraction_reference.md
 ├── outputs/
 │   └── ai_medical_insights.json   # Generated output
-├── dashboard/                     # Placeholder for future dashboard
+├── dashboard/
+│   ├── generate_dashboard.py      # Dashboard generator script
+│   └── clinical_dashboard.html    # Generated visual dashboard
 ├── .gitignore
 ├── README.md
 └── run_hdds_prototype.py          # Main runner script
@@ -94,22 +137,10 @@ hdds_clinical_intelligence/
 
 ---
 
-## How to Run
-
-```bash
-cd hdds_clinical_intelligence
-python run_hdds_prototype.py
-```
-
-Output will be saved to `outputs/ai_medical_insights.json`.
-
----
-
 ## Future Plan
 
 - Replace sample JSON with **Synthea CSV extraction** for realistic synthetic patient populations
 - Add NLP-based extraction using Azure Health NLP or similar services
-- Build a Streamlit/Flask dashboard for visual insights
 - Integrate with FHIR-compatible data formats
 - Add more sophisticated ML-based agents alongside the rule-based ones
 

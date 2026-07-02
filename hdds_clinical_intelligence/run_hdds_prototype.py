@@ -5,8 +5,10 @@ HDDS Clinical Intelligence Prototype — Runner Script
 Loads synthetic patient data, runs all six agents in sequence,
 and saves the combined AI medical insights to outputs/ai_medical_insights.json.
 
-Usage:
-    python run_hdds_prototype.py
+Supports both single-patient and multi-patient modes:
+    python run_hdds_prototype.py                  # Default: single patient
+    python run_hdds_prototype.py --all            # All patients from all_patients.json
+    python run_hdds_prototype.py --patient SYNTH-002  # Specific patient by ID
 
 Dependencies:
     Python 3.8+ (standard library only — no external packages needed)
@@ -30,7 +32,8 @@ from agents.followup_action_agent import FollowupActionAgent
 
 
 # --- Configuration ---
-INPUT_PATH = os.path.join(PROJECT_ROOT, "data", "processed", "patient_profile.json")
+SINGLE_PATIENT_PATH = os.path.join(PROJECT_ROOT, "data", "processed", "patient_profile.json")
+ALL_PATIENTS_PATH = os.path.join(PROJECT_ROOT, "data", "processed", "all_patients.json")
 OUTPUT_DIR = os.path.join(PROJECT_ROOT, "outputs")
 OUTPUT_PATH = os.path.join(OUTPUT_DIR, "ai_medical_insights.json")
 
@@ -49,7 +52,21 @@ def load_patient_data(filepath: str) -> dict:
     with open(filepath, "r", encoding="utf-8") as f:
         data = json.load(f)
 
-    print(f"  Loaded patient: {data.get('patient_profile', {}).get('name', 'Unknown')}")
+    return data
+
+
+def load_all_patients(filepath: str) -> list:
+    """Load multiple patient profiles from JSON array file."""
+    if not os.path.exists(filepath):
+        print(f"ERROR: Multi-patient data file not found at: {filepath}")
+        sys.exit(1)
+
+    with open(filepath, "r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    if not isinstance(data, list):
+        data = [data]
+
     return data
 
 
@@ -59,102 +76,192 @@ def run_all_agents(patient_data: dict) -> dict:
     agent_outputs = {}
 
     # Agent 1: Clinical Summary
-    print("  [1/6] Running Clinical Summary Agent...")
     summary_agent = ClinicalSummaryAgent()
     agent_outputs["clinical_summary"] = summary_agent.run(patient_data)
 
     # Agent 2: Risk Assessment
-    print("  [2/6] Running Risk Assessment Agent...")
     risk_agent = RiskAssessmentAgent()
     agent_outputs["risk_assessment"] = risk_agent.run(patient_data)
 
     # Agent 3: Early Detection
-    print("  [3/6] Running Early Detection Agent...")
     detection_agent = EarlyDetectionAgent()
     agent_outputs["early_detection"] = detection_agent.run(patient_data)
 
     # Agent 4: Recommendations
-    print("  [4/6] Running Recommendation Agent...")
     rec_agent = RecommendationAgent()
     agent_outputs["recommendations"] = rec_agent.run(patient_data)
 
     # Agent 5: Evidence Validation (needs outputs from other agents)
-    print("  [5/6] Running Evidence Validation Agent...")
     validation_agent = EvidenceValidationAgent()
     agent_outputs["evidence_validation"] = validation_agent.run(patient_data, agent_outputs)
 
     # Agent 6: Follow-up Actions (needs all previous outputs)
-    print("  [6/6] Running Follow-up Action Agent...")
     followup_agent = FollowupActionAgent()
     agent_outputs["followup_actions"] = followup_agent.run(patient_data, agent_outputs)
 
     return agent_outputs
 
 
-def save_output(agent_outputs: dict, output_path: str) -> None:
-    """Save the combined insights to a JSON file."""
-    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+def process_single_patient(patient_data: dict, patient_num: int = 1, total: int = 1) -> dict:
+    """Process a single patient through the agent pipeline."""
+    name = patient_data.get("patient_profile", {}).get("name", "Unknown")
+    pid = patient_data.get("patient_profile", {}).get("patient_id", "N/A")
 
-    final_output = {
-        "metadata": {
-            "project": "HDDS Agentic Clinical Intelligence Platform",
-            "version": "1.0.0-prototype",
-            "generated_at": datetime.now().isoformat(),
-            "data_source": "Synthetic sample data (not real patient data)",
-            "responsible_ai_note": RESPONSIBLE_AI_NOTE,
-        },
-        "patient_id": agent_outputs.get("clinical_summary", {}).get("summary_text", "")[:50],
+    print(f"  [{patient_num}/{total}] Processing: {name} ({pid})")
+
+    print(f"         Running 6 agents...", end="")
+    agent_outputs = run_all_agents(patient_data)
+    print(" Done.")
+
+    # Quick summary
+    risk_level = agent_outputs.get("risk_assessment", {}).get("risk_level", "N/A")
+    total_flags = agent_outputs.get("early_detection", {}).get("total_flags", 0)
+    total_recs = agent_outputs.get("recommendations", {}).get("total_recommendations", 0)
+    total_actions = agent_outputs.get("followup_actions", {}).get("total_actions", 0)
+    validation = agent_outputs.get("evidence_validation", {}).get("validation_status", "N/A")
+
+    print(f"         Risk: {risk_level} | Flags: {total_flags} | "
+          f"Recs: {total_recs} | Actions: {total_actions} | Validation: {validation}")
+
+    return {
+        "patient_id": pid,
+        "patient_name": name,
         "agent_results": agent_outputs,
     }
 
+
+def save_output(results: dict, output_path: str) -> None:
+    """Save the combined insights to a JSON file."""
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+
     with open(output_path, "w", encoding="utf-8") as f:
-        json.dump(final_output, f, indent=2, ensure_ascii=False)
+        json.dump(results, f, indent=2, ensure_ascii=False)
 
     print(f"  Output saved to: {output_path}")
 
 
+def print_banner():
+    """Print the application banner."""
+    print()
+    print("=" * 62)
+    print("   HDDS Agentic Clinical Intelligence Platform")
+    print("   Prototype Runner v2.0")
+    print("=" * 62)
+    print()
+
+
+def print_usage():
+    """Print usage information."""
+    print("Usage:")
+    print("  python run_hdds_prototype.py                    # Single patient (default)")
+    print("  python run_hdds_prototype.py --all              # All patients")
+    print("  python run_hdds_prototype.py --patient SYNTH-002  # Specific patient")
+    print()
+
+
 def main():
     """Main entry point."""
-    print("=" * 60)
-    print("  HDDS Agentic Clinical Intelligence Platform")
-    print("  Prototype Runner v1.0")
-    print("=" * 60)
-    print()
+    print_banner()
+
+    # Parse arguments
+    args = sys.argv[1:]
+    mode = "single"
+    target_patient_id = None
+
+    if "--all" in args:
+        mode = "all"
+    elif "--patient" in args:
+        mode = "specific"
+        idx = args.index("--patient")
+        if idx + 1 < len(args):
+            target_patient_id = args[idx + 1]
+        else:
+            print("ERROR: --patient requires a patient ID argument.")
+            print_usage()
+            sys.exit(1)
+    elif "--help" in args or "-h" in args:
+        print_usage()
+        sys.exit(0)
 
     # Step 1: Load data
     print("[Step 1] Loading patient data...")
-    patient_data = load_patient_data(INPUT_PATH)
+
+    if mode == "single":
+        patient_data = load_patient_data(SINGLE_PATIENT_PATH)
+        patients = [patient_data]
+        print(f"  Loaded 1 patient from patient_profile.json")
+    else:
+        patients = load_all_patients(ALL_PATIENTS_PATH)
+        print(f"  Loaded {len(patients)} patient(s) from all_patients.json")
+
+        if mode == "specific":
+            filtered = [
+                p for p in patients
+                if p.get("patient_profile", {}).get("patient_id") == target_patient_id
+            ]
+            if not filtered:
+                print(f"  ERROR: Patient ID '{target_patient_id}' not found.")
+                available = [p.get("patient_profile", {}).get("patient_id", "?") for p in patients]
+                print(f"  Available IDs: {', '.join(available)}")
+                sys.exit(1)
+            patients = filtered
+            print(f"  Filtered to patient: {target_patient_id}")
+
     print()
 
-    # Step 2: Run all agents
-    print("[Step 2] Running all agents...")
-    agent_outputs = run_all_agents(patient_data)
+    # Step 2: Run agents
+    print("[Step 2] Running agent pipeline...")
+    all_results = []
+    for i, patient in enumerate(patients):
+        result = process_single_patient(patient, i + 1, len(patients))
+        all_results.append(result)
     print()
 
-    # Step 3: Save output
+    # Step 3: Build final output
     print("[Step 3] Saving output...")
-    save_output(agent_outputs, OUTPUT_PATH)
+    final_output = {
+        "metadata": {
+            "project": "HDDS Agentic Clinical Intelligence Platform",
+            "version": "2.0.0-prototype",
+            "generated_at": datetime.now().isoformat(),
+            "data_source": "Synthetic sample data (not real patient data)",
+            "total_patients_processed": len(all_results),
+            "responsible_ai_note": RESPONSIBLE_AI_NOTE,
+        },
+        "patients": all_results,
+    }
+
+    save_output(final_output, OUTPUT_PATH)
     print()
 
-    # Summary
-    risk_level = agent_outputs.get("risk_assessment", {}).get("risk_level", "N/A")
-    total_recs = agent_outputs.get("recommendations", {}).get("total_recommendations", 0)
-    total_actions = agent_outputs.get("followup_actions", {}).get("total_actions", 0)
-    total_flags = agent_outputs.get("early_detection", {}).get("total_flags", 0)
-    validation_status = agent_outputs.get("evidence_validation", {}).get("validation_status", "N/A")
-
-    print("-" * 60)
+    # Summary table
+    print("-" * 62)
     print("  RESULTS SUMMARY")
-    print("-" * 60)
-    print(f"  Risk Level        : {risk_level}")
-    print(f"  Abnormal Flags    : {total_flags}")
-    print(f"  Recommendations   : {total_recs}")
-    print(f"  Follow-up Actions : {total_actions}")
-    print(f"  Validation Status : {validation_status}")
-    print("-" * 60)
+    print("-" * 62)
+    print(f"  {'Patient':<30} {'Risk':<8} {'Flags':<7} {'Recs':<6} {'Actions':<8}")
+    print(f"  {'-' * 30} {'-' * 7} {'-' * 6} {'-' * 5} {'-' * 7}")
+
+    for r in all_results:
+        name = r["patient_name"][:28]
+        ag = r["agent_results"]
+        risk = ag.get("risk_assessment", {}).get("risk_level", "?")
+        flags = ag.get("early_detection", {}).get("total_flags", 0)
+        recs = ag.get("recommendations", {}).get("total_recommendations", 0)
+        actions = ag.get("followup_actions", {}).get("total_actions", 0)
+        print(f"  {name:<30} {risk:<8} {flags:<7} {recs:<6} {actions:<8}")
+
+    print("-" * 62)
     print()
     print(f"  NOTE: {RESPONSIBLE_AI_NOTE}")
     print()
+
+    # Dashboard hint
+    dashboard_script = os.path.join(PROJECT_ROOT, "dashboard", "generate_dashboard.py")
+    if os.path.exists(dashboard_script):
+        print("  TIP: Generate the visual dashboard with:")
+        print("       python dashboard/generate_dashboard.py")
+        print()
+
     print("  Done.")
 
 
