@@ -139,22 +139,38 @@ def chat_with_patient(request: ChatRequest):
     with open(OUTPUT_JSON, "r", encoding="utf-8") as f:
         insights_data = json.load(f)
         
-    # In a real app we'd fetch the raw patient profile from DB, 
-    # but here we can just reload the Synthea output or find it.
+    # Try to find the patient in the processed Synthea profiles or sample data
     from data_ingestion.synthea_parser import process_synthea_data
     from agents.chat_agent import ChatbotAgent
     
-    # We load the processed synthea profiles to get raw data
+    profiles = []
     patients_file = os.path.join(PROJECT_ROOT, "data", "processed", "patient_profiles.json")
-    if not os.path.exists(patients_file):
-        raise HTTPException(status_code=404, detail="No raw patient profiles found.")
+    if os.path.exists(patients_file):
+        with open(patients_file, "r", encoding="utf-8") as f:
+            profiles = json.load(f).get("patients", [])
+            
+    if not profiles:
+        # Fallback to sample data
+        if os.path.exists(SAMPLE_ALL):
+            with open(SAMPLE_ALL, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                profiles = data if isinstance(data, list) else [data]
+                # Some sample data wraps patient inside "patient_profile"
+                profiles = [p.get("patient_profile", p) for p in profiles]
         
-    with open(patients_file, "r", encoding="utf-8") as f:
-        profiles = json.load(f).get("patients", [])
-        
-    patient_data = next((p for p in profiles if p["patient_id"] == request.patient_id), None)
+    patient_data = next((p for p in profiles if p.get("patient_id") == request.patient_id), None)
+    
     if not patient_data:
-        raise HTTPException(status_code=404, detail=f"Patient {request.patient_id} not found.")
+        # Fallback to single sample
+        if os.path.exists(SAMPLE_SINGLE):
+            with open(SAMPLE_SINGLE, "r", encoding="utf-8") as f:
+                p = json.load(f)
+                p = p.get("patient_profile", p)
+                if p.get("patient_id") == request.patient_id:
+                    patient_data = p
+
+    if not patient_data:
+        raise HTTPException(status_code=404, detail=f"Patient {request.patient_id} not found in loaded datasets.")
         
     # Inject GTX notes for the chat agent
     from gtx_rag_system import GTXRagSystem
