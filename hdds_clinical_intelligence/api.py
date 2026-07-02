@@ -151,7 +151,6 @@ def load_synthea_data():
 async def upload_file(file: UploadFile = File(...)):
     """
     Upload a patient document. Accepts:
-      - .json files (patient profile format)
       - .pdf files (parsed as text, then mapped to profile - prototype)
     """
     os.makedirs(UPLOAD_DIR, exist_ok=True)
@@ -165,23 +164,9 @@ async def upload_file(file: UploadFile = File(...)):
         content = await file.read()
         f.write(content)
 
-    if ext == ".json":
-        # Direct JSON patient profile
-        with open(save_path, "r", encoding="utf-8") as f:
-            data = json.load(f)
-
-        if isinstance(data, list):
-            patients = data
-        elif "patient_profile" in data:
-            patients = [data]
-        else:
-            raise HTTPException(status_code=400, detail="JSON must contain 'patient_profile' key.")
-
-        return build_response(patients)
-
-    elif ext == ".pdf":
+    if ext == ".pdf":
         # For prototype: PDF upload is accepted and saved,
-        # but we use sample data to demonstrate the pipeline.
+        # but we use Synthea data via Orchestrator to demonstrate the pipeline.
         # In production, this would use Azure Health NLP or similar.
         with open(SAMPLE_SINGLE, "r", encoding="utf-8") as f:
             patient = json.load(f)
@@ -193,7 +178,7 @@ async def upload_file(file: UploadFile = File(...)):
     else:
         raise HTTPException(
             status_code=400,
-            detail=f"Unsupported file type: {ext}. Please upload .json or .pdf files.",
+            detail=f"Unsupported file type: {ext}. Please upload .pdf files only.",
         )
 
 

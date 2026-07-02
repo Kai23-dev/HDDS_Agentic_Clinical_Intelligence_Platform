@@ -26,8 +26,8 @@ export default function UploadView({ onProcessStart }) {
 
   const validateAndSet = (file) => {
     const ext = file.name.split('.').pop().toLowerCase();
-    if (!['pdf', 'json'].includes(ext)) {
-      setError('Please upload a .pdf or .json file');
+    if (ext !== 'pdf') {
+      setError('Please upload a .pdf file only');
       return;
     }
     setError(null);
@@ -69,7 +69,7 @@ export default function UploadView({ onProcessStart }) {
               <Upload className="w-5 h-5 text-gray-600" />
             </div>
             <p className="text-xs font-medium text-gray-600">Upload Documents</p>
-            <p className="text-[10px] text-gray-400 mt-0.5">PDF / JSON</p>
+            <p className="text-[10px] text-gray-400 mt-0.5">PDF only</p>
           </div>
           <ArrowRight className="w-4 h-4 text-gray-300 flex-shrink-0" />
           <div className="flex-1">
@@ -102,7 +102,7 @@ export default function UploadView({ onProcessStart }) {
           type="file"
           ref={fileInputRef}
           onChange={handleFileSelect}
-          accept=".pdf,.json"
+          accept=".pdf"
           className="hidden"
         />
 
@@ -120,7 +120,7 @@ export default function UploadView({ onProcessStart }) {
             <p className="font-medium text-gray-500">
               Drag & drop your file here, or <span className="text-[#b8a800] underline">browse</span>
             </p>
-            <p className="text-sm text-gray-400 mt-1">Supports PDF and JSON files</p>
+            <p className="text-sm text-gray-400 mt-1">Supports PDF files only</p>
           </div>
         )}
       </div>
