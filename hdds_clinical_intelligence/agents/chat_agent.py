@@ -1,12 +1,47 @@
+import os
+
 class ChatbotAgent:
     """
-    Simulates a conversational agent that answers clinical questions 
-    based on the patient's structured data (Synthea) and unstructured notes (Asclepius).
+    Simulates a conversational agent that answers clinical questions.
+    Uses Google Gemini if GEMINI_API_KEY is present, otherwise falls back to local rules.
     """
     def run(self, question: str, patient_data: dict) -> str:
+        
+        # 1. Try real LLM (Gemini) if API key is present
+        api_key = os.getenv("GEMINI_API_KEY")
+        if api_key:
+            try:
+                from google import genai
+                from google.genai import types
+                client = genai.Client(api_key=api_key)
+                
+                # Build context
+                unstructured = patient_data.get("gtx_unstructured_insights", {}).get("raw_text_snippet", "")
+                meds = [m.get("DESCRIPTION", "") for m in patient_data.get("medications", [])]
+                conds = [c.get("condition", "") for c in patient_data.get("medical_history", []) if c.get("status") == "Active"]
+                
+                prompt = f"""
+                You are a highly capable clinical assistant. Answer the doctor's question based ONLY on the following patient data.
+                
+                PATIENT CONDITIONS: {', '.join(conds)}
+                PATIENT MEDICATIONS: {', '.join(meds)}
+                CLINICAL NOTES: {unstructured}
+                
+                DOCTOR QUESTION: {question}
+                """
+                
+                response = client.models.generate_content(
+                    model='gemini-2.5-flash',
+                    contents=prompt,
+                )
+                return response.text
+            except Exception as e:
+                print(f"Gemini API Error: {e}. Falling back to local mock.")
+                # Fall through to mock logic
+
+        # 2. Local Mock Fallback Logic
         q = question.lower()
         
-        # 1. Check unstructured notes first (GTX RAG context)
         unstructured = patient_data.get("gtx_unstructured_insights", {}).get("raw_text_snippet", "").lower()
         if unstructured:
             if "hba1c" in q and "hba1c" in unstructured:
@@ -16,10 +51,9 @@ class ChatbotAgent:
             if "kidney" in q or "dka" in q:
                 return "The patient has a history of stage 3 CKD and was treated for diabetic ketoacidosis (DKA) with IV fluids and insulin."
 
-        # 2. Check structured data (Synthea)
         meds = patient_data.get("medications", [])
         if "medication" in q or "drugs" in q or "prescribed" in q:
-            med_names = [m["name"] for m in meds if m["status"] == "Active"]
+            med_names = [m.get("DESCRIPTION", "Unknown") for m in meds]
             if med_names:
                 return f"The patient is currently prescribed: {', '.join(med_names)}."
             return "The patient has no active medications on file."
@@ -38,7 +72,6 @@ class ChatbotAgent:
                 return f"The patient has a history of: {', '.join(cond_names)}."
             return "No active conditions on file."
 
-        # Default fallback
         return (
             "I could not find a specific answer in the patient's records. "
             "Please review the clinical summary for more details."

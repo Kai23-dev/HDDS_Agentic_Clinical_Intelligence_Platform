@@ -15,8 +15,12 @@ import os
 import sys
 import shutil
 from datetime import datetime
-from fastapi import FastAPI, HTTPException, UploadFile, File
+from fastapi import FastAPI, HTTPException, UploadFile, File, Path
 from fastapi.middleware.cors import CORSMiddleware
+from dotenv import load_dotenv
+
+# Load environment variables (API keys)
+load_dotenv()
 
 # Make sure agents are importable
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
@@ -205,6 +209,15 @@ def chat_with_patient(request: ChatRequest, token: str = Depends(verify_token)):
         
     # Inject GTX notes for the chat agent
     from gtx_rag_system import GTXRagSystem
+    # Optional Azure NLP integration
+    try:
+        from extraction.azure_health_nlp import extract_clinical_entities
+        azure_results = extract_clinical_entities(request.patient_id)
+        if azure_results:
+            patient_data["azure_nlp_insights"] = azure_results
+    except Exception:
+        pass
+
     gtx = GTXRagSystem()
     patient_data["gtx_unstructured_insights"] = gtx.extract_information(request.patient_id)
 
@@ -212,6 +225,40 @@ def chat_with_patient(request: ChatRequest, token: str = Depends(verify_token)):
     answer = agent.run(request.question, patient_data)
     
     return {"answer": answer}
+
+@app.get("/api/fhir/{patient_id}")
+def get_fhir_data(patient_id: str, token: str = Depends(verify_token)):
+    """Export patient data as a standard FHIR R4 Bundle."""
+    if not os.path.exists(OUTPUT_JSON):
+        raise HTTPException(status_code=404, detail="No patient data loaded.")
+        
+    with open(OUTPUT_JSON, "r", encoding="utf-8") as f:
+        insights_data = json.load(f)
+        
+    # Find patient insights
+    p_insights = next((p for p in insights_data.get("patients", []) if p["patient_id"] == patient_id), None)
+    
+    # Try to load raw profile
+    patients_file = os.path.join(PROJECT_ROOT, "data", "processed", "patient_profiles.json")
+    raw_profile = {}
+    if os.path.exists(patients_file):
+        with open(patients_file, "r", encoding="utf-8") as f:
+            profiles = json.load(f).get("patients", [])
+            raw_profile = next((p for p in profiles if p.get("patient_id") == patient_id), {})
+            
+    if not raw_profile and os.path.exists(SAMPLE_ALL):
+        with open(SAMPLE_ALL, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            profiles = data if isinstance(data, list) else [data]
+            raw_profile = next((p.get("patient_profile", p) for p in profiles if p.get("patient_id") == patient_id or p.get("patient_profile", {}).get("patient_id") == patient_id), {})
+
+    if not p_insights and not raw_profile:
+        raise HTTPException(status_code=404, detail=f"Patient {patient_id} not found.")
+        
+    from data_ingestion.fhir_converter import convert_to_fhir_bundle
+    fhir_bundle = convert_to_fhir_bundle(raw_profile, p_insights)
+    
+    return fhir_bundle
 
 @app.post("/api/run-sample")
 def run_sample_data(token: str = Depends(verify_token)):

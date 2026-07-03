@@ -6,7 +6,7 @@ import { useState } from 'react';
 import {
   ArrowLeft, User, ShieldAlert, AlertTriangle,
   CheckCircle, Clock, FileText, TrendingUp, ChevronDown, ChevronUp,
-  MessageSquare, X, Send, Loader2
+  MessageSquare, X, Send, Loader2, Download
 } from 'lucide-react';
 
 // helper: risk level badge color
@@ -83,6 +83,27 @@ export default function ResultsView({ data, onBack, token, role }) {
     } finally {
       setIsChatLoading(false);
     }
+  const handleDownloadFHIR = async () => {
+    try {
+      const pid = data.patients[selectedIdx].patient_id;
+      const response = await fetch(`http://127.0.0.1:8000/api/fhir/${pid}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!response.ok) throw new Error('FHIR export failed');
+      const fhirData = await response.json();
+      
+      const blob = new Blob([JSON.stringify(fhirData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `fhir-bundle-${pid}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      alert("Could not export FHIR data. Please try again.");
+    }
   };
 
   if (!data || !data.patients || data.patients.length === 0) return null;
@@ -107,6 +128,12 @@ export default function ResultsView({ data, onBack, token, role }) {
               <ShieldAlert className="w-3.5 h-3.5" /> Admin Settings
             </button>
           )}
+          <button 
+            onClick={handleDownloadFHIR}
+            className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded transition-colors"
+          >
+            <Download className="w-3.5 h-3.5" /> Export FHIR
+          </button>
           <button 
             onClick={() => window.print()}
             className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded transition-colors"
