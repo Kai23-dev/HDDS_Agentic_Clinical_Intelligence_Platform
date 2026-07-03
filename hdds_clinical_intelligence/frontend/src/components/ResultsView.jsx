@@ -83,6 +83,8 @@ export default function ResultsView({ data, onBack, token, role }) {
     } finally {
       setIsChatLoading(false);
     }
+  };
+
   const handleDownloadFHIR = async () => {
     try {
       const pid = data.patients[selectedIdx].patient_id;
