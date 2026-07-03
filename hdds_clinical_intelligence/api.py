@@ -70,16 +70,13 @@ def build_response(patients_data: list) -> dict:
     
     for patient in patients_data:
         # Some sample data formats wrap the patient in "patient_profile"
-        if "patient_profile" in patient:
-            profile_data = patient["patient_profile"]
-        else:
-            profile_data = patient
+        profile_data = patient.get("patient_profile", patient)
             
         pid = profile_data.get("patient_id", "N/A")
         name = profile_data.get("patient_name", profile_data.get("name", "Unknown"))
         
-        # Run through orchestrator
-        agent_results = orchestrator.process_patient(profile_data)
+        # Run through orchestrator using the FULL patient object
+        agent_results = orchestrator.process_patient(patient)
         
         results.append({
             "patient_id": pid,
