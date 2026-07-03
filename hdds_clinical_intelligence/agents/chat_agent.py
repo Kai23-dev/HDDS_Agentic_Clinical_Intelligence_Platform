@@ -54,7 +54,7 @@ class ChatbotAgent:
 
         meds = patient_data.get("medications", [])
         if "medication" in q or "drugs" in q or "prescribed" in q:
-            med_names = [m.get("DESCRIPTION", "Unknown") for m in meds]
+            med_names = [m.get("DESCRIPTION", m.get("name", "Unknown")) for m in meds]
             if med_names:
                 return f"The patient is currently prescribed: {', '.join(med_names)}."
             return "The patient has no active medications on file."
