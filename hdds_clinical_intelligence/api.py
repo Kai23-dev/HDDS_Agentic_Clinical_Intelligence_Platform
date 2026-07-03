@@ -106,6 +106,7 @@ def build_response(patients_data: list) -> dict:
 # ---- Security / Auth ----
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi import Depends
+from pydantic import BaseModel
 
 security = HTTPBearer()
 
