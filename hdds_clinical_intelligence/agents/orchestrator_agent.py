@@ -4,6 +4,7 @@ from agents.early_detection_agent import EarlyDetectionAgent
 from agents.recommendation_agent import RecommendationAgent
 from agents.evidence_validation_agent import EvidenceValidationAgent
 from agents.followup_action_agent import FollowupActionAgent
+from agents.medication_prescription_agent import MedicationPrescriptionAgent
 from gtx_rag_system import GTXRagSystem
 
 class OrchestratorAgent:
@@ -19,6 +20,7 @@ class OrchestratorAgent:
         self.recommendation_agent = RecommendationAgent()
         self.evidence_validation_agent = EvidenceValidationAgent()
         self.followup_action_agent = FollowupActionAgent()
+        self.medication_prescription_agent = MedicationPrescriptionAgent()
 
     def process_patient(self, patient_data: dict) -> dict:
         """
@@ -47,7 +49,15 @@ class OrchestratorAgent:
         outputs["risk_assessment"] = self.risk_assessment_agent.run(patient_data)
         outputs["early_detection"] = self.early_detection_agent.run(patient_data)
         outputs["recommendations"] = self.recommendation_agent.run(patient_data)
+        outputs["medication_prescription"] = self.medication_prescription_agent.run(patient_data)
         outputs["evidence_validation"] = self.evidence_validation_agent.run(patient_data, outputs)
         outputs["followup_actions"] = self.followup_action_agent.run(patient_data, outputs)
+
+        # Add orchestrator metadata so the user knows it's the Orchestrator Agent
+        outputs["orchestrator_metadata"] = {
+            "agent_name": "Orchestrator Agent",
+            "version": "1.0.0",
+            "description": "Central coordinator that delegates to sub-agents."
+        }
 
         return outputs

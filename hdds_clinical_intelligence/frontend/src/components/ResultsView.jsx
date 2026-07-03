@@ -334,10 +334,10 @@ export default function ResultsView({ data, onBack, token, role }) {
           )}
         </Section>
 
-        {/* Recommendations */}
-        <Section title="Treatment Recommendations" icon={<CheckCircle className="w-4 h-4 text-green-500" />} defaultOpen={true}>
+        {/* General Clinical Interventions */}
+        <Section title="General Clinical Interventions" icon={<CheckCircle className="w-4 h-4 text-purple-500" />}>
           <div className="space-y-3">
-            {ar.recommendations.recommendations && ar.recommendations.recommendations.map((rec, i) => (
+            {ar.recommendations.recommendations.map((rec, i) => (
               <div key={i} className="border border-gray-100 rounded-lg p-3 flex justify-between items-start">
                 <div className="flex gap-3">
                   <div className="flex-shrink-0 mt-0.5">
@@ -371,6 +371,47 @@ export default function ResultsView({ data, onBack, token, role }) {
             Draft -- Requires Clinician Review
           </p>
         </Section>
+
+        {/* Medication Prescription Plan */}
+        {ar.medication_prescription && (
+          <Section title="Medication Prescription Plan" icon={<FileText className="w-4 h-4 text-indigo-500" />}>
+            <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-4 rounded-r">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <AlertTriangle className="h-5 w-5 text-red-500" />
+                </div>
+                <div className="ml-3">
+                  <h3 className="text-sm font-medium text-red-800">Requires Clinician Approval</h3>
+                  <div className="mt-2 text-xs text-red-700">
+                    <p>{ar.medication_prescription.warning}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="space-y-3">
+              {ar.medication_prescription.prescriptions.map((p, i) => (
+                <div key={i} className="bg-white border border-gray-200 rounded p-3 shadow-sm">
+                  <div className="flex justify-between items-start mb-2">
+                    <h4 className="text-sm font-bold text-gray-800">{p.diagnosis}</h4>
+                    <span className="px-2 py-1 bg-indigo-100 text-indigo-800 text-[10px] font-bold uppercase rounded">
+                      Prescription Draft
+                    </span>
+                  </div>
+                  <div className="text-sm mb-1">
+                    <span className="font-semibold text-gray-700">Suggested Medication:</span> {p.suggested_medication}
+                  </div>
+                  <div className="text-sm mb-1">
+                    <span className="font-semibold text-gray-700">Dosage Guideline:</span> {p.dosage_guideline}
+                  </div>
+                  <div className="text-xs text-gray-500 mt-2 italic">
+                    Rationale: {p.rationale}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Section>
+        )}
 
         {/* Follow-up Actions */}
         <Section title="Follow-up Actions" icon={<Clock className="w-4 h-4 text-purple-500" />} defaultOpen={false}>
