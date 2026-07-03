@@ -46,6 +46,7 @@ function Section({ title, icon, children, defaultOpen = true }) {
 
 export default function ResultsView({ data, onBack, token, role }) {
   const [selectedIdx, setSelectedIdx] = useState(0);
+  const [riskFilter, setRiskFilter] = useState('All');
   
   // Chat state
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -118,27 +119,61 @@ export default function ResultsView({ data, onBack, token, role }) {
         </div>
       </div>
 
-      {/* Patient selector tabs */}
-      {data.patients.length > 1 && (
-        <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
-          {data.patients.map((p, i) => (
-            <button
-              key={p.patient_id}
-              onClick={() => setSelectedIdx(i)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium border transition-all whitespace-nowrap ${
-                i === selectedIdx
-                  ? 'bg-[#ffe600] border-[#e6cf00] text-[#2e2e38] shadow-sm'
-                  : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
-              }`}
-            >
-              <User className="w-3.5 h-3.5" />
-              {p.patient_name}
-            </button>
-          ))}
-        </div>
-      )}
+      <div className="flex flex-col md:flex-row gap-6">
+        
+        {/* Sidebar Patient List */}
+        {data.patients.length > 1 && (
+          <div className="w-full md:w-64 flex-shrink-0">
+            <div className="bg-white rounded-lg border border-gray-200 p-4 sticky top-6">
+              <h3 className="font-semibold text-gray-700 mb-4 flex items-center gap-2">
+                <User className="w-4 h-4" /> Patient List
+              </h3>
+              
+              <div className="mb-4">
+                <label className="text-xs font-medium text-gray-500 mb-1 block">Filter by Risk:</label>
+                <select 
+                  value={riskFilter}
+                  onChange={(e) => setRiskFilter(e.target.value)}
+                  className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:border-[#ffe600]"
+                >
+                  <option value="All">All Patients</option>
+                  <option value="High">High Risk</option>
+                  <option value="Medium">Medium Risk</option>
+                  <option value="Low">Low Risk</option>
+                </select>
+              </div>
 
-      {/* KPI Cards */}
+              <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-1">
+                {data.patients.map((p, i) => {
+                  const pRisk = p.agent_results.risk_assessment.risk_level;
+                  if (riskFilter !== 'All' && pRisk !== riskFilter) return null;
+                  
+                  return (
+                    <button
+                      key={p.patient_id}
+                      onClick={() => setSelectedIdx(i)}
+                      className={`w-full text-left px-3 py-2 rounded border transition-all ${
+                        i === selectedIdx
+                          ? 'bg-[#ffe600] border-[#e6cf00] text-[#2e2e38] shadow-sm'
+                          : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'
+                      }`}
+                    >
+                      <div className="font-medium text-sm truncate">{p.patient_name}</div>
+                      <div className={`text-[10px] font-bold mt-1 uppercase ${severityColor(pRisk === 'High' ? 'High' : pRisk === 'Medium' ? 'Moderate' : 'Low')}`}>
+                        {pRisk} Risk
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Main Content Area */}
+        <div className="flex-1 min-w-0">
+          
+          {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         <div className="bg-white rounded-lg border border-gray-200 p-4 result-card">
           <p className="text-xs text-gray-400 uppercase font-medium mb-1">Risk Level</p>
@@ -191,7 +226,20 @@ export default function ResultsView({ data, onBack, token, role }) {
               </div>
             </div>
             <div>
-              <p className="text-xs text-gray-400 font-medium uppercase mb-2">Current Medications</p>
+              <div className="flex justify-between items-end mb-2">
+                <p className="text-xs text-gray-400 font-medium uppercase">Current Medications</p>
+                {ar.clinical_summary.medication_complexity && (
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase ${
+                    ar.clinical_summary.medication_complexity.includes('High') 
+                      ? 'bg-red-100 text-red-700' 
+                      : ar.clinical_summary.medication_complexity === 'Moderate'
+                      ? 'bg-amber-100 text-amber-700'
+                      : 'bg-green-100 text-green-700'
+                  }`}>
+                    Complexity: {ar.clinical_summary.medication_complexity}
+                  </span>
+                )}
+              </div>
               <div className="space-y-2">
                 {ar.clinical_summary.current_medications.map((m, i) => (
                   <div key={i} className="text-xs bg-blue-50 border border-blue-100 p-2 rounded flex justify-between items-center group">
@@ -318,6 +366,10 @@ export default function ResultsView({ data, onBack, token, role }) {
           <strong>Responsible AI Notice:</strong> {meta.responsible_ai_note}
         </p>
       </div>
+      
+      </div> {/* Close Main Content Area */}
+      
+      </div> {/* Close Layout wrapper */}
 
       {/* Floating Chatbot UI */}
       {isChatOpen ? (

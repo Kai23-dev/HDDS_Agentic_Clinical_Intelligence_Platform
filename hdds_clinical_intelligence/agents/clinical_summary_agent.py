@@ -28,6 +28,17 @@ class ClinicalSummaryAgent:
         medications = patient_data.get("medications", [])
         lab_results = patient_data.get("lab_results", [])
         encounters = patient_data.get("encounters", [])
+        
+        med_list = [med.get("DESCRIPTION", "Unknown Medication") for med in medications]
+        
+        # Calculate Medication Complexity
+        med_count = len(med_list)
+        if med_count >= 5:
+            med_complexity = "High - Polypharmacy Risk"
+        elif med_count >= 3:
+            med_complexity = "Moderate"
+        else:
+            med_complexity = "Low"
 
         # --- Build active conditions list ---
         active_conditions = [
@@ -79,7 +90,9 @@ class ClinicalSummaryAgent:
             "version": self.version,
             "summary_text": summary_text,
             "active_conditions": active_conditions,
-            "current_medications": med_summary,
+            "current_medications": med_list,
+            "medication_count": med_count,
+            "medication_complexity": med_complexity,
             "abnormal_labs": abnormal_labs,
             "latest_encounter": latest_encounter,
         }
