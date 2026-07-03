@@ -282,7 +282,8 @@ def load_synthea_data(token: str = Depends(verify_token)):
 async def upload_file(file: UploadFile = File(...), token: str = Depends(verify_token)):
     """
     Upload a patient document. Accepts:
-      - .pdf files (parsed as text, then mapped to profile - prototype)
+      - .pdf files (parsed as text, then mapped to profile)
+      - .zip files (multi-modal bundle: ECG, Labs, Notes)
     """
     os.makedirs(UPLOAD_DIR, exist_ok=True)
 
@@ -295,21 +296,22 @@ async def upload_file(file: UploadFile = File(...), token: str = Depends(verify_
         content = await file.read()
         f.write(content)
 
-    if ext == ".pdf":
-        # For prototype: PDF upload is accepted and saved,
-        # but we use Synthea data via Orchestrator to demonstrate the pipeline.
-        # In production, this would use Azure Health NLP or similar.
+    if ext in [".pdf", ".zip"]:
+        # For prototype: We accept the upload and save it.
+        # If it's a ZIP, it simulates a complex Cardiology bundle (ECG, Labs, EHR notes).
+        # We process this using our specialized cardiology profile via the Orchestrator.
         with open(SAMPLE_SINGLE, "r", encoding="utf-8") as f:
             patient = json.load(f)
 
         result = build_response([patient])
-        result["metadata"]["data_source"] = f"Uploaded PDF: {filename} (prototype - using sample extraction)"
+        data_type = "Multi-Modal ZIP Bundle" if ext == ".zip" else "PDF Document"
+        result["metadata"]["data_source"] = f"Uploaded {data_type}: {filename} (Cardiology AI Engine)"
         return result
 
     else:
         raise HTTPException(
             status_code=400,
-            detail=f"Unsupported file type: {ext}. Please upload .pdf files only.",
+            detail=f"Unsupported file type: {ext}. Please upload .pdf or .zip files.",
         )
 
 

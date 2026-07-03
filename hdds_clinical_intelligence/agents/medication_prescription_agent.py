@@ -50,6 +50,13 @@ class MedicationPrescriptionAgent:
                     "dosage_guideline": "Aspirin 81 mg daily; Metoprolol 25 mg daily",
                     "rationale": "Secondary prevention and mortality reduction post-MI or for heart failure."
                 })
+            elif "atrial fibrillation" in cond_lower:
+                prescriptions.append({
+                    "diagnosis": condition,
+                    "suggested_medication": "Direct Oral Anticoagulant (e.g., Apixaban) & Rate Control (e.g., Diltiazem)",
+                    "dosage_guideline": "Apixaban 5mg BID; Diltiazem CD 120mg daily",
+                    "rationale": "Stroke prevention (CHA2DS2-VASc guided) and ventricular rate control."
+                })
             elif "asthma" in cond_lower:
                 prescriptions.append({
                     "diagnosis": condition,

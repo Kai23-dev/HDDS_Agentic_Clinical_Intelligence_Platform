@@ -1,0 +1,32 @@
+DISCHARGE SUMMARY:
+
+Patient Name: N/A
+Date of Discharge: N/A
+Admitting Physician: N/A
+Attending Physician: N/A
+Date of Admission: N/A
+Date of Discharge: N/A
+
+HOSPITAL COURSE:
+
+This 59-year-old female presented with dyspnea and an oxygen saturation level of 65%, leading to an immediate tracheal intubation due to moderate acute respiratory distress syndrome (ARDS) with reduced lung compliance. After being diagnosed, the patient was treated with deep sedation, neuromuscular blocking agents, and prone positioning. On day 14, a trial of sitting on the edge-of-bed (SOEB) was performed, resulting in a significant increase in the patient's level of consciousness and collaborative state. The patient's muscle strength indicated ICU-acquired weakness, with a Medical Research Council sum-score (MRC-SS) of 40/60. Despite the weakness, she was continuously encouraged to mobilize herself with exercises against gravity, and she was actively transferred to a chair each day. After successful extubation, she presented postextubation dysphagia, which was closely monitored for secretion management and cough stimulation. Physical rehabilitation was continued, and the patient started walking with a walking aid on day 19. Her oxygen desaturation during exercise training became evident at this point, and after 25 days, she was transferred to the institution's rehabilitation facilities where she received further treatment.
+
+DISCHARGE DIAGNOSES:
+
+- Moderate acute respiratory distress syndrome (ARDS) with reduced lung compliance
+- Postextubation dysphagia
+- ICU-acquired weakness
+- Persistent physical function impairment
+
+PROCEDURES:
+
+- Immediate tracheal intubation
+- Sitting on the edge-of-bed (SOEB) trial
+- Continuous physical therapy
+- Successful extubation
+- Close monitoring for secretion management and cough stimulation
+- Walking with a walking aid
+
+SUMMARY OF CARE:
+
+This document serves as a summary of the hospital course of a 59-year-old female admitted due to dyspnea and diagnosed with moderate acute respiratory distress syndrome (ARDS) with reduced lung compliance. After treatment, a trial of sitting on the edge-of-bed (SOEB) was performed, resulting in the patient's significant level of consciousness improvement. Despite experiencing ICU-acquired weakness, the patient was continuously encouraged to mobilize herself with exercises against gravity, and after successful extubation, physical rehabilitation was continued until she was able to walk with a walking aid. The patient was transferred to the institution's rehabilitation facilities, where further treatment was administered to address her persistent physical function impairment.

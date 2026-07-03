@@ -1,0 +1,31 @@
+Discharge Summary:
+
+Patient Information:
+- Name: [Redacted]
+- Age: 57
+- Gender: Male
+- Admission Date: [Redacted]
+- Discharge Date: N/A
+- Medical Record Number: [Redacted]
+
+Hospital Course Summary:
+- The patient was admitted to the ICU with symptoms of dyspnea, heavy dry cough, and fever after testing positive for COVID-19.
+- Despite initial ability to exercise and sit in a chair with a physical therapist, the patient's respiratory condition progressively worsened, requiring intubation and proning.
+- The patient's large amounts of bronchial mucus and respiratory failure necessitated regular suctioning and respiratory therapy.
+- Manual airway clearance techniques were employed by 1-2 physical therapists to increase effective airway clearance while avoiding alveolar collapse with some success.
+- After extubation, the patient continued to require intensive manual airway clearance techniques, nasal rinsing, and airway suctioning.
+- Additional physical therapy interventions, including passive range of motion, assisted exercising, and mobilization, were also utilized.
+- At the time of writing, the patient remained in the ICU without ventilatory support.
+
+Summary of Events:
+- The patient presented with symptoms of COVID-19, including dyspnea, heavy dry cough, and fever.
+- Despite intubation and proning, the patient's respiratory condition continued to worsen, requiring regular suctioning and respiratory therapy.
+- Manual airway clearance techniques were used to increase expiratory flow for effective airway clearance.
+- After extubation, the patient continued to require intensive manual airway clearance techniques, nasal rinsing, and airway suctioning.
+- The patient also received additional physical therapy interventions to aid in recovery.
+- At the time of writing, the patient remained in the ICU without ventilatory support.
+
+Impression:
+- The patient presented with symptoms of COVID-19 and suffered from respiratory failure necessitating intubation, proning, manual airway clearance techniques, and extensive respiratory therapy.
+- Despite initial improvements, the patient continues to require intensive manual airway clearance techniques, nasal rinsing, airway suctioning, and additional physical therapy.
+- The patient has not yet been discharged.
