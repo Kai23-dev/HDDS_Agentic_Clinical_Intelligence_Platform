@@ -42,7 +42,8 @@ class ChatbotAgent:
         # 2. Local Mock Fallback Logic
         q = question.lower()
         
-        unstructured = patient_data.get("gtx_unstructured_insights", {}).get("raw_text_snippet", "").lower()
+        gtx_insights = patient_data.get("gtx_unstructured_insights", "")
+        unstructured = gtx_insights.get("raw_text_snippet", "").lower() if isinstance(gtx_insights, dict) else str(gtx_insights).lower()
         if unstructured:
             if "hba1c" in q and "hba1c" in unstructured:
                 return "Based on the discharge summary, the patient's HbA1c was noted to be elevated at 8.5%."
