@@ -372,31 +372,22 @@ export default function ResultsView({ data, onBack, token, role }) {
           </p>
         </Section>
 
-        {/* Medication Prescription Plan */}
+        {/* Medication Prescription Plan -> Treatment Recommendations */}
         {ar.medication_prescription && (
-          <Section title="Medication Prescription Plan" icon={<FileText className="w-4 h-4 text-indigo-500" />}>
-            <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-4 rounded-r">
-              <div className="flex">
-                <div className="flex-shrink-0">
-                  <AlertTriangle className="h-5 w-5 text-red-500" />
-                </div>
-                <div className="ml-3">
-                  <h3 className="text-sm font-medium text-red-800">Requires Clinician Approval</h3>
-                  <div className="mt-2 text-xs text-red-700">
-                    <p>{ar.medication_prescription.warning}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
+          <Section title="Treatment Recommendations" icon={<FileText className="w-4 h-4 text-indigo-500" />}>
             <div className="space-y-3">
               {ar.medication_prescription.prescriptions.map((p, i) => (
                 <div key={i} className="bg-white border border-gray-200 rounded p-3 shadow-sm">
                   <div className="flex justify-between items-start mb-2">
                     <h4 className="text-sm font-bold text-gray-800">{p.diagnosis}</h4>
-                    <span className="px-2 py-1 bg-indigo-100 text-indigo-800 text-[10px] font-bold uppercase rounded">
-                      Prescription Draft
-                    </span>
+                    <div className="flex gap-2">
+                      <button className="text-xs px-3 py-1 bg-green-50 text-green-600 hover:bg-green-100 rounded font-medium border border-green-200 whitespace-nowrap">
+                        ✓ Accept
+                      </button>
+                      <button className="text-xs px-3 py-1 bg-red-50 text-red-600 hover:bg-red-100 rounded font-medium border border-red-200 whitespace-nowrap">
+                        ✕ Reject
+                      </button>
+                    </div>
                   </div>
                   <div className="text-sm mb-1">
                     <span className="font-semibold text-gray-700">Suggested Medication:</span> {p.suggested_medication}
