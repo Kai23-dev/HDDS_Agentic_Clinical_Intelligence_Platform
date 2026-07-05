@@ -13,8 +13,7 @@ import UploadView from './components/UploadView';
 import ProcessingView from './components/ProcessingView';
 import ResultsView from './components/ResultsView';
 import LoginView from './components/LoginView';
-
-const API_URL = 'http://127.0.0.1:8000';
+import { API_URL } from './config';
 
 function App() {
   // 'login' | 'upload' | 'processing' | 'results' | 'error'

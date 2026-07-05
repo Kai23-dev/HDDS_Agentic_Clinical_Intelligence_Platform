@@ -8,6 +8,7 @@ import {
   CheckCircle, Clock, FileText, TrendingUp, ChevronDown, ChevronUp,
   MessageSquare, X, Send, Loader2, Download
 } from 'lucide-react';
+import { API_URL } from '../config';
 
 // helper: risk level badge color
 function riskStyles(level) {
@@ -68,7 +69,7 @@ export default function ResultsView({ data, onBack, token, role }) {
     try {
       const pid = data.patients[selectedIdx].patient_id;
       // Depending on how Axios is configured globally in App, we use native fetch here for simplicity
-      const response = await fetch('http://127.0.0.1:8000/api/chat', {
+      const response = await fetch(`${API_URL}/api/chat`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -88,7 +89,7 @@ export default function ResultsView({ data, onBack, token, role }) {
   const handleDownloadFHIR = async () => {
     try {
       const pid = data.patients[selectedIdx].patient_id;
-      const response = await fetch(`http://127.0.0.1:8000/api/fhir/${pid}`, {
+      const response = await fetch(`${API_URL}/api/fhir/${pid}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (!response.ok) throw new Error('FHIR export failed');
@@ -107,6 +108,28 @@ export default function ResultsView({ data, onBack, token, role }) {
       alert("Could not export FHIR data. Please try again.");
     }
   };
+
+  // Records a clinician's Accept/Reject on an AI suggestion. The decision is sent
+  // to the backend audit trail; `decisions` drives the button UI state.
+  const [decisions, setDecisions] = useState({});
+  const handleDecision = async (itemType, item, decision) => {
+    const pid = data.patients[selectedIdx].patient_id;
+    const key = `${pid}|${itemType}|${item}`;
+    setDecisions(prev => ({ ...prev, [key]: decision }));
+    try {
+      await fetch(`${API_URL}/api/decision`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ patient_id: pid, item_type: itemType, item, decision }),
+      });
+    } catch (err) {
+      // Roll back the optimistic UI state if the audit write fails.
+      setDecisions(prev => ({ ...prev, [key]: undefined }));
+      alert('Could not record decision. Please try again.');
+    }
+  };
+  const decisionOf = (itemType, item) =>
+    decisions[`${data.patients[selectedIdx].patient_id}|${itemType}|${item}`];
 
   if (!data || !data.patients || data.patients.length === 0) return null;
 
@@ -357,11 +380,23 @@ export default function ResultsView({ data, onBack, token, role }) {
                   </div>
                 </div>
                 <div className="flex flex-col gap-1.5 ml-4">
-                  <button className="text-xs px-3 py-1 bg-green-50 text-green-600 hover:bg-green-100 rounded font-medium border border-green-200 whitespace-nowrap">
-                    Accept
+                  <button
+                    onClick={() => handleDecision('recommendation', rec.recommendation, 'accepted')}
+                    className={`text-xs px-3 py-1 rounded font-medium border whitespace-nowrap ${
+                      decisionOf('recommendation', rec.recommendation) === 'accepted'
+                        ? 'bg-green-600 text-white border-green-600'
+                        : 'bg-green-50 text-green-600 hover:bg-green-100 border-green-200'}`}
+                  >
+                    {decisionOf('recommendation', rec.recommendation) === 'accepted' ? '✓ Accepted' : 'Accept'}
                   </button>
-                  <button className="text-xs px-3 py-1 bg-red-50 text-red-600 hover:bg-red-100 rounded font-medium border border-red-200 whitespace-nowrap">
-                    Reject
+                  <button
+                    onClick={() => handleDecision('recommendation', rec.recommendation, 'rejected')}
+                    className={`text-xs px-3 py-1 rounded font-medium border whitespace-nowrap ${
+                      decisionOf('recommendation', rec.recommendation) === 'rejected'
+                        ? 'bg-red-600 text-white border-red-600'
+                        : 'bg-red-50 text-red-600 hover:bg-red-100 border-red-200'}`}
+                  >
+                    {decisionOf('recommendation', rec.recommendation) === 'rejected' ? '✕ Rejected' : 'Reject'}
                   </button>
                 </div>
               </div>
@@ -381,11 +416,23 @@ export default function ResultsView({ data, onBack, token, role }) {
                   <div className="flex justify-between items-start mb-2">
                     <h4 className="text-sm font-bold text-gray-800">{p.diagnosis}</h4>
                     <div className="flex gap-2">
-                      <button className="text-xs px-3 py-1 bg-green-50 text-green-600 hover:bg-green-100 rounded font-medium border border-green-200 whitespace-nowrap">
-                        ✓ Accept
+                      <button
+                        onClick={() => handleDecision('medication_prescription', p.suggested_medication, 'accepted')}
+                        className={`text-xs px-3 py-1 rounded font-medium border whitespace-nowrap ${
+                          decisionOf('medication_prescription', p.suggested_medication) === 'accepted'
+                            ? 'bg-green-600 text-white border-green-600'
+                            : 'bg-green-50 text-green-600 hover:bg-green-100 border-green-200'}`}
+                      >
+                        {decisionOf('medication_prescription', p.suggested_medication) === 'accepted' ? '✓ Accepted' : '✓ Accept'}
                       </button>
-                      <button className="text-xs px-3 py-1 bg-red-50 text-red-600 hover:bg-red-100 rounded font-medium border border-red-200 whitespace-nowrap">
-                        ✕ Reject
+                      <button
+                        onClick={() => handleDecision('medication_prescription', p.suggested_medication, 'rejected')}
+                        className={`text-xs px-3 py-1 rounded font-medium border whitespace-nowrap ${
+                          decisionOf('medication_prescription', p.suggested_medication) === 'rejected'
+                            ? 'bg-red-600 text-white border-red-600'
+                            : 'bg-red-50 text-red-600 hover:bg-red-100 border-red-200'}`}
+                      >
+                        {decisionOf('medication_prescription', p.suggested_medication) === 'rejected' ? '✕ Rejected' : '✕ Reject'}
                       </button>
                     </div>
                   </div>

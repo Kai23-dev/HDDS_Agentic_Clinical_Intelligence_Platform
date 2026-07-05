@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Lock, User, AlertTriangle } from 'lucide-react';
+import { API_URL } from '../config';
 
 export default function LoginView({ onLogin }) {
   const [email, setEmail] = useState('');
@@ -13,8 +14,7 @@ export default function LoginView({ onLogin }) {
     setError('');
 
     try {
-      // In a real app, use the actual API URL
-      const res = await fetch('http://127.0.0.1:8000/api/login', {
+      const res = await fetch(`${API_URL}/api/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })

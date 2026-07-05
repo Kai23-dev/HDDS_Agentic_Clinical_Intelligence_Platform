@@ -6,6 +6,7 @@ from agents.evidence_validation_agent import EvidenceValidationAgent
 from agents.followup_action_agent import FollowupActionAgent
 from agents.medication_prescription_agent import MedicationPrescriptionAgent
 from gtx_rag_system import GTXRagSystem
+from audit_logger import log_event
 
 class OrchestratorAgent:
     """
@@ -22,9 +23,11 @@ class OrchestratorAgent:
         self.followup_action_agent = FollowupActionAgent()
         self.medication_prescription_agent = MedicationPrescriptionAgent()
 
-    def process_patient(self, patient_data: dict) -> dict:
+    def process_patient(self, patient_data: dict, actor: str = "system") -> dict:
         """
         Runs the full orchestration flow for a single patient.
+        `actor` is the identity (from the JWT) on whose behalf the run happens; it
+        is recorded in the audit trail alongside the exact agents/backend used.
         """
         patient_id = patient_data.get("patient_id")
         
@@ -59,5 +62,26 @@ class OrchestratorAgent:
             "version": "1.0.0",
             "description": "Central coordinator that delegates to sub-agents."
         }
+
+        # Audit trail: record the exact models/agents/backend used for this run so
+        # any produced insight is fully traceable.
+        try:
+            rag_backend = getattr(getattr(self.gtx_rag, "_backend", None), "name", "unknown")
+        except Exception:
+            rag_backend = "unknown"
+        log_event(
+            action="pipeline_run",
+            actor=actor,
+            patient_id=patient_id,
+            resource="orchestrator",
+            details={
+                "rag_backend": rag_backend,
+                "agents": {
+                    key: val.get("version")
+                    for key, val in outputs.items()
+                    if isinstance(val, dict) and "version" in val
+                },
+            },
+        )
 
         return outputs

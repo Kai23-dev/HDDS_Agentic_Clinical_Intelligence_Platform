@@ -62,21 +62,28 @@ RESPONSIBLE_AI_NOTE = (
 
 
 from agents.orchestrator_agent import OrchestratorAgent
+from audit_logger import log_event
 
-def build_response(patients_data: list) -> dict:
+
+def _actor(user: dict) -> str:
+    """Pull the acting user's identity out of the validated JWT claims."""
+    return (user or {}).get("sub", "unknown")
+
+
+def build_response(patients_data: list, actor: str = "system") -> dict:
     """Process a list of patients and build the final response via Orchestrator."""
     results = []
     orchestrator = OrchestratorAgent()
-    
+
     for patient in patients_data:
         # Some sample data formats wrap the patient in "patient_profile"
         profile_data = patient.get("patient_profile", patient)
-            
+
         pid = profile_data.get("patient_id", "N/A")
         name = profile_data.get("patient_name", profile_data.get("name", "Unknown"))
-        
+
         # Run through orchestrator using the FULL patient object
-        agent_results = orchestrator.process_patient(patient)
+        agent_results = orchestrator.process_patient(patient, actor=actor)
         
         results.append({
             "patient_id": pid,
@@ -128,6 +135,7 @@ class LoginRequest(BaseModel):
 def login(request: LoginRequest):
     user = USERS.get(request.email)
     if not user or not verify_password(request.password, user["password_hash"]):
+        log_event("login_failed", actor=request.email, outcome="failure")
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
     token = create_access_token({
@@ -135,6 +143,7 @@ def login(request: LoginRequest):
         "role": user["role"],
         "name": user["name"],
     })
+    log_event("login_success", actor=request.email, details=f"role={user['role']}")
     return {"access_token": token, "role": user["role"], "name": user["name"]}
 
 def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
@@ -172,8 +181,12 @@ class ChatRequest(BaseModel):
     question: str
 
 @app.post("/api/chat")
-def chat_with_patient(request: ChatRequest, token: str = Depends(verify_token)):
+def chat_with_patient(request: ChatRequest, user: dict = Depends(verify_token)):
     """Chat with a specific patient's data."""
+    # Audit the access event -- record WHO queried WHICH patient, not the question
+    # text itself (the question may contain PHI).
+    log_event("chat_query", actor=_actor(user), patient_id=request.patient_id,
+              resource="chat_agent")
     if not os.path.exists(OUTPUT_JSON):
         raise HTTPException(status_code=404, detail="No patient data loaded.")
         
@@ -233,8 +246,9 @@ def chat_with_patient(request: ChatRequest, token: str = Depends(verify_token)):
     return {"answer": answer}
 
 @app.get("/api/fhir/{patient_id}")
-def get_fhir_data(patient_id: str, token: str = Depends(verify_token)):
+def get_fhir_data(patient_id: str, user: dict = Depends(verify_token)):
     """Export patient data as a standard FHIR R4 Bundle."""
+    log_event("fhir_export", actor=_actor(user), patient_id=patient_id, resource="fhir_bundle")
     if not os.path.exists(OUTPUT_JSON):
         raise HTTPException(status_code=404, detail="No patient data loaded.")
         
@@ -267,16 +281,18 @@ def get_fhir_data(patient_id: str, token: str = Depends(verify_token)):
     return fhir_bundle
 
 @app.post("/api/run-sample")
-def run_sample_data(token: str = Depends(verify_token)):
+def run_sample_data(user: dict = Depends(verify_token)):
     """Run the pipeline on the built-in sample patients."""
     with open(SAMPLE_ALL, "r", encoding="utf-8") as f:
         patients = json.load(f)
     if not isinstance(patients, list):
         patients = [patients]
-    return build_response(patients)
+    log_event("run_pipeline", actor=_actor(user), resource="sample_data",
+              details=f"{len(patients)} patient(s)")
+    return build_response(patients, actor=_actor(user))
 
 @app.post("/api/load-synthea")
-def load_synthea_data(token: str = Depends(verify_token)):
+def load_synthea_data(user: dict = Depends(verify_token)):
     """Run the pipeline on the parsed Synthea dataset."""
     from data_ingestion.synthea_parser import process_synthea_data
     output_path = process_synthea_data()
@@ -285,10 +301,33 @@ def load_synthea_data(token: str = Depends(verify_token)):
     patients = data.get("patients", [])
     if not patients:
         raise HTTPException(status_code=400, detail="No patients found in Synthea data.")
-    return build_response(patients)
+    log_event("run_pipeline", actor=_actor(user), resource="synthea_data",
+              details=f"{len(patients)} patient(s)")
+    return build_response(patients, actor=_actor(user))
+
+
+class DecisionRequest(BaseModel):
+    patient_id: str
+    item_type: str   # e.g. "medication_prescription" | "recommendation"
+    item: str        # the medication name or recommendation text being decided on
+    decision: str    # "accepted" | "rejected"
+
+@app.post("/api/decision")
+def record_decision(request: DecisionRequest, user: dict = Depends(verify_token)):
+    """Record a clinician's Accept/Reject decision on an AI suggestion (audit trail)."""
+    if request.decision not in ("accepted", "rejected"):
+        raise HTTPException(status_code=400, detail="decision must be 'accepted' or 'rejected'")
+    entry = log_event(
+        action=f"clinical_decision_{request.decision}",
+        actor=_actor(user),
+        patient_id=request.patient_id,
+        resource=request.item_type,
+        details=request.item,
+    )
+    return {"status": "recorded", "logged_at": entry["timestamp"]}
 
 @app.post("/api/upload")
-async def upload_file(file: UploadFile = File(...), token: str = Depends(verify_token)):
+async def upload_file(file: UploadFile = File(...), user: dict = Depends(verify_token)):
     """
     Upload a patient document. Accepts:
       - .pdf files (parsed as text, then mapped to profile)
@@ -316,12 +355,18 @@ async def upload_file(file: UploadFile = File(...), token: str = Depends(verify_
     profile = build_profile_from_file(save_path, ext, filename)
     extraction = profile.pop("_extraction", {})
 
+    actor = _actor(user)
+    log_event("document_upload", actor=actor, patient_id=profile.get("patient_id"),
+              resource=ext.lstrip("."),
+              details=f"{filename}; {extraction.get('text_chars', 0)} chars; "
+                      f"found_entities={extraction.get('found_entities')}")
+
     if not extraction.get("found_entities"):
         # Nothing clinical could be extracted (e.g. scanned/empty PDF, no NLP).
         # Fall back to the sample profile but say so explicitly -- never pretend.
         with open(SAMPLE_SINGLE, "r", encoding="utf-8") as f:
             profile = json.load(f)
-        result = build_response([profile])
+        result = build_response([profile], actor=actor)
         result["metadata"]["data_source"] = (
             f"Uploaded {filename}: no clinical entities extracted "
             f"({extraction.get('text_chars', 0)} chars read) -- showing sample profile for review."
@@ -329,7 +374,7 @@ async def upload_file(file: UploadFile = File(...), token: str = Depends(verify_
         result["metadata"]["extraction"] = extraction
         return result
 
-    result = build_response([profile])
+    result = build_response([profile], actor=actor)
     data_type = "Multi-Modal ZIP Bundle" if ext == ".zip" else "PDF Document"
     result["metadata"]["data_source"] = (
         f"Uploaded {data_type}: {filename} (parsed via {extraction.get('source')})"
