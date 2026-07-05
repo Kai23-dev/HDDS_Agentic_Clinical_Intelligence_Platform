@@ -245,6 +245,27 @@ def chat_with_patient(request: ChatRequest, user: dict = Depends(verify_token)):
     
     return {"answer": answer}
 
+@app.post("/api/dictate")
+async def dictate_note(file: UploadFile = File(...), user: dict = Depends(verify_token)):
+    """Transcribe a doctor's spoken audio file to text using Azure AI Speech."""
+    log_event("speech_dictation", actor=_actor(user), resource="speech_to_text")
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
+    
+    filename = file.filename or "dictation.wav"
+    save_path = os.path.join(UPLOAD_DIR, filename)
+    
+    with open(save_path, "wb") as f:
+        content = await file.read()
+        f.write(content)
+        
+    from extraction.speech_to_text import transcribe_audio_file
+    transcript = transcribe_audio_file(save_path)
+    
+    if transcript is None:
+        raise HTTPException(status_code=500, detail="Azure AI Speech is not configured or failed.")
+        
+    return {"transcript": transcript}
+
 @app.get("/api/fhir/{patient_id}")
 def get_fhir_data(patient_id: str, user: dict = Depends(verify_token)):
     """Export patient data as a standard FHIR R4 Bundle."""
