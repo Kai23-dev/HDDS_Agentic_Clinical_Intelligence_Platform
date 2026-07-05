@@ -111,9 +111,13 @@ from pydantic import BaseModel
 
 security = HTTPBearer()
 
-MOCK_USERS = {
-    "doctor@ey.com": {"password": "password123", "role": "doctor", "name": "Dr. Smith"},
-    "admin@ey.com": {"password": "admin", "role": "admin", "name": "System Admin"}
+from auth import hash_password, verify_password, create_access_token, decode_access_token
+
+# Demo user store. Passwords are bcrypt-hashed at startup (never stored in plaintext).
+# In production this becomes a real user database; the shape stays the same.
+USERS = {
+    "doctor@ey.com": {"password_hash": hash_password("password123"), "role": "doctor", "name": "Dr. Smith"},
+    "admin@ey.com": {"password_hash": hash_password("admin"), "role": "admin", "name": "System Admin"},
 }
 
 class LoginRequest(BaseModel):
@@ -122,19 +126,24 @@ class LoginRequest(BaseModel):
 
 @app.post("/api/login")
 def login(request: LoginRequest):
-    user = MOCK_USERS.get(request.email)
-    if not user or user["password"] != request.password:
+    user = USERS.get(request.email)
+    if not user or not verify_password(request.password, user["password_hash"]):
         raise HTTPException(status_code=401, detail="Invalid credentials")
-    
-    # Mock JWT token for prototype
-    token = f"mock-jwt-token-{request.email}-{user['role']}"
+
+    token = create_access_token({
+        "sub": request.email,
+        "role": user["role"],
+        "name": user["name"],
+    })
     return {"access_token": token, "role": user["role"], "name": user["name"]}
 
 def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
-    token = credentials.credentials
-    if not token.startswith("mock-jwt-token-"):
-        raise HTTPException(status_code=401, detail="Invalid token")
-    return token
+    """Validate the signed JWT and return its claims (dict). 401 if invalid/expired."""
+    from jose import JWTError
+    try:
+        return decode_access_token(credentials.credentials)
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
 
 # ---- Routes ----
 
@@ -296,23 +305,37 @@ async def upload_file(file: UploadFile = File(...), token: str = Depends(verify_
         content = await file.read()
         f.write(content)
 
-    if ext in [".pdf", ".zip"]:
-        # For prototype: We accept the upload and save it.
-        # If it's a ZIP, it simulates a complex Cardiology bundle (ECG, Labs, EHR notes).
-        # We process this using our specialized cardiology profile via the Orchestrator.
-        with open(SAMPLE_SINGLE, "r", encoding="utf-8") as f:
-            patient = json.load(f)
-
-        result = build_response([patient])
-        data_type = "Multi-Modal ZIP Bundle" if ext == ".zip" else "PDF Document"
-        result["metadata"]["data_source"] = f"Uploaded {data_type}: {filename} (Cardiology AI Engine)"
-        return result
-
-    else:
+    if ext not in [".pdf", ".zip"]:
         raise HTTPException(
             status_code=400,
             detail=f"Unsupported file type: {ext}. Please upload .pdf or .zip files.",
         )
+
+    # Parse the ACTUAL uploaded content into a patient profile.
+    from data_ingestion.document_parser import build_profile_from_file
+    profile = build_profile_from_file(save_path, ext, filename)
+    extraction = profile.pop("_extraction", {})
+
+    if not extraction.get("found_entities"):
+        # Nothing clinical could be extracted (e.g. scanned/empty PDF, no NLP).
+        # Fall back to the sample profile but say so explicitly -- never pretend.
+        with open(SAMPLE_SINGLE, "r", encoding="utf-8") as f:
+            profile = json.load(f)
+        result = build_response([profile])
+        result["metadata"]["data_source"] = (
+            f"Uploaded {filename}: no clinical entities extracted "
+            f"({extraction.get('text_chars', 0)} chars read) -- showing sample profile for review."
+        )
+        result["metadata"]["extraction"] = extraction
+        return result
+
+    result = build_response([profile])
+    data_type = "Multi-Modal ZIP Bundle" if ext == ".zip" else "PDF Document"
+    result["metadata"]["data_source"] = (
+        f"Uploaded {data_type}: {filename} (parsed via {extraction.get('source')})"
+    )
+    result["metadata"]["extraction"] = extraction
+    return result
 
 
 if __name__ == "__main__":

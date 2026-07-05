@@ -4,6 +4,13 @@ uvicorn>=0.23.0
 python-multipart>=0.0.6
 python-dotenv
 
+# --- Auth ---
+python-jose[cryptography]>=3.3.0   # signed JWTs
+bcrypt>=4.1.0                      # password hashing
+
+# --- Document parsing ---
+pypdf>=4.0.0                       # extract text from uploaded PDFs
+
 # --- LLM providers (optional at runtime; app degrades gracefully) ---
 openai>=1.30.0            # Azure OpenAI: chat + embeddings (primary on Azure)
 google-genai              # Gemini fallback for the chat agent

@@ -57,12 +57,18 @@ See `SETUP.md` for clone-and-run steps and `ROADMAP.md` for what remains before 
 
 The request flow is: **frontend → FastAPI (`api.py`) → `OrchestratorAgent` → sub-agents + GTX RAG → `outputs/ai_medical_insights.json` → frontend**.
 
-- **`api.py`** — FastAPI app. Mock JWT auth: `POST /api/login` against the in-memory `MOCK_USERS`
-  dict returns a `mock-jwt-token-...` string; all data endpoints require it via the `verify_token`
-  dependency (it only checks the prefix). Key routes: `/api/run-sample`, `/api/load-synthea`,
-  `/api/upload` (PDF/ZIP — currently maps any upload to the sample cardiology profile),
-  `/api/insights`, `/api/chat`, `/api/fhir/{patient_id}`. `build_response()` is the shared entry
-  that runs a patient list through the orchestrator and persists the result.
+- **`api.py`** — FastAPI app. Real JWT auth via `auth.py`: `POST /api/login` verifies a
+  bcrypt-hashed password (demo users in `USERS`) and returns a signed, expiring JWT; `verify_token`
+  decodes/validates it and returns the claims dict. Key routes: `/api/run-sample`, `/api/load-synthea`,
+  `/api/upload` (PDF/ZIP — parses real content via `data_ingestion/document_parser.py`, falls back to
+  the sample only when nothing extracts, and flags it), `/api/insights`, `/api/chat`,
+  `/api/fhir/{patient_id}`. `build_response()` is the shared entry that runs a patient list through
+  the orchestrator and persists the result.
+
+- **`auth.py`** — bcrypt password hashing + signed JWT create/decode (python-jose). Signing key from
+  `JWT_SECRET_KEY` (warns loudly on the insecure dev default). **`document_parser.py`** extracts text
+  (pypdf for PDF, zip members for ZIP) and structures it into a profile via `extraction/health_nlp.py`
+  (Azure Health NLP → local keyword fallback).
 
 - **`agents/orchestrator_agent.py`** — `OrchestratorAgent.process_patient(patient_data)` is the
   central coordinator. It (1) pulls unstructured insights from the GTX RAG system, injects them
