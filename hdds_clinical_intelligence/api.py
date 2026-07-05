@@ -108,6 +108,14 @@ def build_response(patients_data: list, actor: str = "system") -> dict:
     with open(OUTPUT_JSON, "w", encoding="utf-8") as f:
         json.dump(output, f, indent=2, ensure_ascii=False)
 
+    # Stage 3: Optional upload of processed outputs to Azure
+    try:
+        from storage.blob_storage import upload_file
+        container_outputs = os.getenv("AZURE_STORAGE_CONTAINER_OUTPUTS", "hdds-outputs")
+        upload_file(container_outputs, OUTPUT_JSON, "ai_medical_insights.json")
+    except Exception as e:
+        print(f"Failed to upload insights to blob storage: {e}")
+
     return output
 
 
@@ -258,6 +266,15 @@ async def dictate_note(file: UploadFile = File(...), user: dict = Depends(verify
         content = await file.read()
         f.write(content)
         
+    # Stage 3: Optional upload of dictated audio to Azure Blob Storage
+    try:
+        from storage.blob_storage import upload_file
+        container_uploads = os.getenv("AZURE_STORAGE_CONTAINER_UPLOADS", "hdds-uploads")
+        blob_path = f"dictation-audio/{filename}"
+        upload_file(container_uploads, save_path, blob_path)
+    except Exception as e:
+        print(f"Failed to upload dictation to blob storage: {e}")
+        
     from extraction.speech_to_text import transcribe_audio_file
     transcript = transcribe_audio_file(save_path)
     
@@ -364,6 +381,15 @@ async def upload_file(file: UploadFile = File(...), user: dict = Depends(verify_
     with open(save_path, "wb") as f:
         content = await file.read()
         f.write(content)
+
+    # Stage 3: Optional upload of documents to Azure Blob Storage
+    try:
+        from storage.blob_storage import upload_file
+        container_uploads = os.getenv("AZURE_STORAGE_CONTAINER_UPLOADS", "hdds-uploads")
+        blob_path = f"{ext.strip('.')}/{filename}"
+        upload_file(container_uploads, save_path, blob_path)
+    except Exception as e:
+        print(f"Failed to upload document to blob storage: {e}")
 
     if ext not in [".pdf", ".zip"]:
         raise HTTPException(
