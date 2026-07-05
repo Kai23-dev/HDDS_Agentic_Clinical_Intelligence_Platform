@@ -1,197 +1,90 @@
-# HDDS Agentic Clinical Intelligence Platform
+# HDDS Clinical Intelligence — Application
 
-A full-stack clinical intelligence prototype that uses **synthetic healthcare data**, rule-based extraction/harmonization, and **AI agents** to generate clinician-reviewable medical insights — served through a **FastAPI** backend and visualized on a **React + Tailwind CSS** dashboard.
+This is the application package. For the project overview see the
+[root README](../README.md). For setup and architecture see
+[`SETUP.md`](SETUP.md), [`ROADMAP.md`](ROADMAP.md), and [`CLAUDE.md`](CLAUDE.md).
 
-> **Responsible AI Note:** All outputs are generated for prototype/demo purposes only and are intended for clinician review. This is not a final diagnosis or treatment decision.
-
----
-
-## Tech Stack
-
-| Layer | Technology |
-|-------|------------|
-| **AI Agents** | Python 3.8+ (standard library) |
-| **Backend API** | FastAPI + Uvicorn |
-| **Frontend UI** | React 18 + Vite + Tailwind CSS |
-| **Data** | Synthetic JSON (no real patient data) |
+> **Responsible-AI note:** synthetic data only; every output is for clinician review,
+> not a final diagnosis or treatment decision.
 
 ---
 
-## Quick Start (Clone & Run)
-
-### Prerequisites
-- Python 3.8+ installed
-- Node.js 18+ and npm installed
-- Git installed
-
-### Step-by-step
+## Run it
 
 ```bash
-# 1. Clone the repo
-git clone https://github.com/Kai23-dev/HDDS_Agentic_Clinical_Intelligence_Platform.git
-cd HDDS_Agentic_Clinical_Intelligence_Platform/hdds_clinical_intelligence
-
-# 2. Install Python dependencies
+# from this directory (hdds_clinical_intelligence/)
 pip install -r requirements.txt
+cp .env.example .env                 # all keys optional; runs offline without them
 
-# 3. Run the AI agent pipeline to generate insights
-python run_hdds_prototype.py --all
+python data_ingestion/asclepius_ingest.py    # build clinical notes (RAG source)
+python api.py                                 # backend  -> http://127.0.0.1:8000
 
-# 4. Start the FastAPI backend (Terminal 1)
-#    IMPORTANT: Run this from the hdds_clinical_intelligence/ folder
-python api.py
-
-# 5. Start the React frontend (Terminal 2)
-cd frontend
-npm install
-npm run dev
+cd frontend && npm install && npm run dev     # frontend -> http://localhost:5173
 ```
 
-Then open **http://localhost:5173** in your browser.
-
-### One-command start (Git Bash / macOS / Linux)
+Standalone pipeline (no server), writes `outputs/ai_medical_insights.json`:
 
 ```bash
-cd hdds_clinical_intelligence
-bash start.sh
+python run_hdds_prototype.py --all            # all sample patients
+python run_hdds_prototype.py --patient SYNTH-002
 ```
+
+> Backend commands must run from this folder (where `api.py` lives), or uvicorn fails
+> with "Could not import module api".
 
 ---
 
-## Project Structure
+## How it fits together
 
 ```
-HDDS_Agentic_Clinical_Intelligence_Platform/
-|-- README.md                          # Root overview
-|-- hdds_clinical_intelligence/        # Main project folder
-    |-- api.py                         # FastAPI backend server
-    |-- run_hdds_prototype.py          # AI agent pipeline runner
-    |-- requirements.txt               # Python dependencies
-    |-- start.sh                       # One-command startup script
-    |
-    |-- agents/                        # 6 AI agent modules
-    |   |-- __init__.py
-    |   |-- clinical_summary_agent.py
-    |   |-- risk_assessment_agent.py
-    |   |-- early_detection_agent.py
-    |   |-- recommendation_agent.py
-    |   |-- evidence_validation_agent.py
-    |   |-- followup_action_agent.py
-    |
-    |-- data/
-    |   |-- processed/
-    |   |   |-- patient_profile.json   # Single patient (default)
-    |   |   |-- all_patients.json      # All 3 synthetic patients
-    |   |-- raw/                       # For future raw data
-    |   |-- sample_notes/              # For future clinical notes
-    |
-    |-- frontend/                      # React + Vite + Tailwind CSS
-    |   |-- src/
-    |   |   |-- App.jsx                # Main dashboard component
-    |   |   |-- index.css              # Tailwind + custom styles
-    |   |   |-- main.jsx               # React entry point
-    |   |-- package.json
-    |   |-- tailwind.config.js
-    |   |-- vite.config.js
-    |
-    |-- outputs/                       # Generated AI insights
-    |   |-- ai_medical_insights.json
-    |
-    |-- docs/                          # Design documentation
-    |   |-- architecture.md
-    |   |-- prototype_roadmap.md
-    |   |-- responsible_ai_notes.md
-    |
-    |-- extraction/                    # Schema & reference docs
-        |-- extraction_schema.json
-        |-- azure_health_nlp_optional.md
-        |-- gdx_extraction_reference.md
+frontend ─► FastAPI (api.py) ─► OrchestratorAgent ─► RAG backend + 7 sub-agents
+                                        │
+                                        ▼
+                         outputs/ai_medical_insights.json ─► frontend
 ```
+
+- **`api.py`** — FastAPI app. Routes: `/api/login`, `/api/run-sample`, `/api/load-synthea`,
+  `/api/upload`, `/api/insights`, `/api/chat`, `/api/fhir/{patient_id}`. `build_response()`
+  runs a patient list through the orchestrator and persists the result.
+- **`agents/orchestrator_agent.py`** — the real pipeline. Pulls unstructured insights from the
+  RAG system, injects them into the patient dict, then runs the 7 sub-agents in sequence.
+- **`agents/*.py`** — each sub-agent is a class with `run()` returning a plain dict.
+  `EvidenceValidationAgent` and `FollowupActionAgent` also take the prior agents' outputs.
+- **`rag/`** — pluggable RAG (see below). `gtx_rag_system.py` is a thin facade over it.
+- **`llm/azure_client.py`** — single Azure OpenAI entry point (chat + embeddings).
+- **`data_ingestion/`** — Synthea CSV parser, FHIR R4 converter, notes generator.
 
 ---
 
-## Agent Pipeline
+## RAG backends
 
-The runner executes 6 agents sequentially on each patient profile:
+Selected at runtime by `rag/factory.py` via the `RAG_BACKEND` env var:
 
-```
-Patient JSON --> [1] Clinical Summary
-             --> [2] Risk Assessment (Low / Medium / High)
-             --> [3] Early Detection (flag abnormal labs)
-             --> [4] Recommendations (clinician-review drafts)
-             --> [5] Evidence Validation (trace assertions to source)
-             --> [6] Follow-up Actions (prioritized next steps)
-             --> ai_medical_insights.json --> FastAPI --> React Dashboard
-```
+| Backend | File | When used |
+|---|---|---|
+| **EY GDX** | `rag/gdx_rag.py` | plug in when EY provides it (`RAG_BACKEND=gdx`) |
+| **Azure RAG** | `rag/azure_rag.py` | real embeddings + retrieval + cited synthesis (needs `AZURE_OPENAI_*`) |
+| **Keyword** | `rag/keyword_rag.py` | offline fallback, no keys |
 
-### Runner CLI options
-
-```bash
-python run_hdds_prototype.py              # Single default patient
-python run_hdds_prototype.py --all        # All 3 patients
-python run_hdds_prototype.py --patient SYNTH-002   # Specific patient
-```
+`auto` (default) tries them in that order. All backends implement `rag/base.py::BaseRAGSystem`
+and return the same contract, so nothing downstream changes when you swap them.
 
 ---
 
-## Sample Patients
+## Environment
 
-| ID | Name | Age | Conditions | Expected Risk |
-|----|------|-----|------------|---------------|
-| SYNTH-001 | John Doe | 58/M | Type 2 Diabetes, Hypertension | High |
-| SYNTH-002 | Maria Garcia | 72/F | CHF, AFib, CKD Stage 3, Osteoarthritis | High |
-| SYNTH-003 | Emily Chen | 34/F | Asthma, Iron Deficiency Anemia | Low |
+Copy `.env.example` to `.env`. Every key is optional. See [`SETUP.md`](SETUP.md) for details on
+`AZURE_OPENAI_*`, `RAG_BACKEND`, `GEMINI_API_KEY`, and the Azure Health NLP keys.
 
----
+## Sample patients
 
-## API Endpoints
+| ID | Name | Profile |
+|----|------|---------|
+| SYNTH-001 | John Doe | Type 2 Diabetes, Hypertension |
+| SYNTH-002 | Maria Garcia | CHF, AFib, CKD Stage 3 |
+| SYNTH-003 | Emily Chen | Asthma, Iron Deficiency Anemia |
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/` | Health check |
-| GET | `/api/insights` | Returns full AI insights JSON |
+## Testing
 
----
-
-## Troubleshooting
-
-### "Could not import module api"
-You are running `uvicorn` from the **wrong directory**. Make sure you are inside `hdds_clinical_intelligence/` (where `api.py` lives), not the root folder or `frontend/`.
-
-```bash
-cd hdds_clinical_intelligence
-uvicorn api:app --reload
-```
-
-Or simply use:
-```bash
-python api.py
-```
-
-### Frontend shows "Connection Error"
-The FastAPI backend is not running. Start it first in a separate terminal (see Quick Start above).
-
-### "Insights JSON not found"
-You haven't generated the insights yet. Run the pipeline first:
-```bash
-python run_hdds_prototype.py --all
-```
-
----
-
-## Future Roadmap
-
-- [ ] Synthea CSV extraction for realistic patient populations
-- [ ] NLP-based clinical note extraction (Azure Health NLP)
-- [ ] FHIR-compatible data formats
-- [ ] User authentication & role-based access
-- [ ] Patient comparison view on the dashboard
-- [ ] Export to PDF report generation
-
----
-
-## Requirements
-
-- Python 3.8+
-- Node.js 18+ / npm
-- No database needed — all data is JSON-based
+No automated suite yet (tracked in [`ROADMAP.md`](ROADMAP.md)). Verify changes by running the
+pipeline and exercising the API endpoints or the dashboard end-to-end.
