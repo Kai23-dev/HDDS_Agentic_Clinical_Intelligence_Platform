@@ -26,6 +26,9 @@ Thumbs.db
 # Output files (regenerated on each run)
 outputs/ai_medical_insights.json
 
+# RAG embedding cache (regenerated from notes)
+data/processed/rag_vector_index.json
+
 # Environment variables
 .env
 .env.local

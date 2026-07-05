@@ -15,11 +15,13 @@ def read_csv(filename):
         return list(reader)
 
 def calculate_age(birthdate_str):
-    # Simple age calc
+    # Age relative to today, accounting for whether the birthday has passed.
+    from datetime import date
     try:
-        birth_year = int(birthdate_str.split('-')[0])
-        return 2024 - birth_year
-    except:
+        y, m, d = (int(x) for x in birthdate_str.split('-')[:3])
+        today = date.today()
+        return today.year - y - ((today.month, today.day) < (m, d))
+    except Exception:
         return 0
 
 def process_synthea_data():

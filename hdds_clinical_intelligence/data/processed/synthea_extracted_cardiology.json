@@ -1,0 +1,15 @@
+{
+  "patient_profile": {
+    "patient_id": "00185faa-2760-4218-9bf5-db301acf8274",
+    "name": "Eusebio566 Wyman904",
+    "gender": "M",
+    "ethnicity": "white"
+  },
+  "vital_signs": {
+    "blood_pressure": "124.0/86.0",
+    "heart_rate": "98.0"
+  },
+  "lab_results": [],
+  "medical_history": [],
+  "medications": []
+}

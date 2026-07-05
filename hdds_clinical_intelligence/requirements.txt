@@ -1,6 +1,12 @@
+# --- Core backend ---
 fastapi>=0.100.0
 uvicorn>=0.23.0
 python-multipart>=0.0.6
 python-dotenv
-google-genai
-azure-ai-textanalytics  
+
+# --- LLM providers (optional at runtime; app degrades gracefully) ---
+openai>=1.30.0            # Azure OpenAI: chat + embeddings (primary on Azure)
+google-genai              # Gemini fallback for the chat agent
+
+# --- Azure services (optional) ---
+azure-ai-textanalytics    # Azure Text Analytics for Health (entity extraction)

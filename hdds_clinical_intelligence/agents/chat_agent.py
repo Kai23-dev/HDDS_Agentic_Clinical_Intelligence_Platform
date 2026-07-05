@@ -6,8 +6,33 @@ class ChatbotAgent:
     Uses Google Gemini if GEMINI_API_KEY is present, otherwise falls back to local rules.
     """
     def run(self, question: str, patient_data: dict) -> str:
-        
-        # 1. Try real LLM (Gemini) if API key is present
+
+        # Shared context used by every LLM backend
+        unstructured = patient_data.get("gtx_unstructured_insights", {})
+        notes_text = unstructured.get("raw_text_snippet", "") if isinstance(unstructured, dict) else str(unstructured)
+        meds = [m.get("DESCRIPTION", m.get("name", "")) for m in patient_data.get("medications", [])]
+        conds = [c.get("condition", "") for c in patient_data.get("medical_history", []) if c.get("status") == "Active"]
+
+        # 1. Prefer Azure OpenAI (company deployment target)
+        try:
+            from llm import azure_client
+            if azure_client.is_configured():
+                messages = [
+                    {"role": "system", "content": (
+                        "You are a clinical assistant for doctor review. Answer ONLY from the "
+                        "patient data provided. If the data does not contain the answer, say so. "
+                        "Do not give a final diagnosis; this is decision support.")},
+                    {"role": "user", "content": (
+                        f"PATIENT CONDITIONS: {', '.join(conds)}\n"
+                        f"PATIENT MEDICATIONS: {', '.join(meds)}\n"
+                        f"CLINICAL NOTES: {notes_text}\n\n"
+                        f"DOCTOR QUESTION: {question}")},
+                ]
+                return azure_client.chat(messages, temperature=0.2)
+        except Exception as e:
+            print(f"Azure OpenAI chat error: {e}. Falling back to Gemini/local.")
+
+        # 2. Try Gemini if API key is present
         api_key = os.getenv("GEMINI_API_KEY")
         if api_key:
             try:
