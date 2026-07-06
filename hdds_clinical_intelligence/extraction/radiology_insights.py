@@ -96,7 +96,11 @@ def analyze_radiology_report(text: str) -> Optional[Dict]:
             
         if findings:
             return {
-                "source": "Azure Health Insights (Radiology Insights)",
+                # Honest provenance: the real Radiology Insights poller above is not
+                # invoked yet (model is preview / may not be provisioned), so these
+                # findings come from a keyword heuristic. Do NOT claim Azure output.
+                "source": "Keyword heuristic (Azure Radiology Insights not invoked)",
+                "simulated": True,
                 "findings": findings,
                 "raw_report": text[:500] + "..."
             }

@@ -16,4 +16,8 @@ openai>=1.30.0            # Azure OpenAI: chat + embeddings (primary on Azure)
 google-genai              # Gemini fallback for the chat agent
 
 # --- Azure services (optional) ---
-azure-ai-textanalytics    # Azure Text Analytics for Health (entity extraction)
+azure-ai-textanalytics                  # Azure Text Analytics for Health (entity extraction)
+azure-storage-blob>=12.19.0             # dataset/upload/output storage (storage/blob_storage.py)
+azure-cognitiveservices-speech>=1.37.0  # dictation speech-to-text (extraction/speech_to_text.py)
+azure-ai-documentintelligence>=1.0.0    # OCR for scanned PDFs (extraction/document_intelligence.py)
+azure-healthinsights-radiologyinsights>=1.0.0  # radiology report analysis (extraction/radiology_insights.py)

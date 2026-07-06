@@ -12,10 +12,11 @@ Endpoints:
 
 import json
 import os
+import re
 import sys
 import shutil
 from datetime import datetime
-from fastapi import FastAPI, HTTPException, UploadFile, File, Path
+from fastapi import FastAPI, HTTPException, UploadFile, File, Path, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 
@@ -40,14 +41,36 @@ app = FastAPI(
     version="2.0.0",
 )
 
-# CORS
+# CORS. Bearer-token auth needs no cookies, so we do NOT allow credentials and we
+# restrict origins to the configured frontend(s). Set ALLOWED_ORIGINS in prod, e.g.
+# "https://my-frontend.azurestaticapps.net". Defaults to the local dev server.
+_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
+    allow_origins=[o.strip() for o in _origins.split(",") if o.strip()],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# --- Upload safety limits ---
+MAX_UPLOAD_BYTES = int(os.getenv("MAX_UPLOAD_MB", "25")) * 1024 * 1024
+
+
+def _safe_filename(name: str) -> str:
+    """Strip any path components and keep a conservative charset (blocks traversal)."""
+    base = os.path.basename(name or "").replace("\\", "").replace("/", "")
+    base = re.sub(r"[^A-Za-z0-9._-]", "_", base)
+    return base or "upload"
+
+
+def _blob_upload_bg(container_env: str, default_container: str, local_path: str, blob_path: str):
+    """Upload to Azure Blob off the request path. Safe no-op if storage isn't configured."""
+    try:
+        from storage.blob_storage import upload_file
+        upload_file(os.getenv(container_env, default_container), local_path, blob_path)
+    except Exception as e:
+        print(f"[blob] background upload failed: {e}")
 
 OUTPUT_DIR = os.path.join(PROJECT_ROOT, "outputs")
 OUTPUT_JSON = os.path.join(OUTPUT_DIR, "ai_medical_insights.json")
@@ -254,27 +277,34 @@ def chat_with_patient(request: ChatRequest, user: dict = Depends(verify_token)):
     return {"answer": answer}
 
 @app.post("/api/dictate")
-async def dictate_note(file: UploadFile = File(...), user: dict = Depends(verify_token)):
+async def dictate_note(
+    file: UploadFile = File(...),
+    background_tasks: BackgroundTasks = None,
+    user: dict = Depends(verify_token),
+):
     """Transcribe a doctor's spoken audio file to text using Azure AI Speech."""
     log_event("speech_dictation", actor=_actor(user), resource="speech_to_text")
     os.makedirs(UPLOAD_DIR, exist_ok=True)
-    
-    filename = file.filename or "dictation.wav"
+
+    filename = _safe_filename(file.filename or "dictation.wav")
     save_path = os.path.join(UPLOAD_DIR, filename)
-    
+
+    content = await file.read(MAX_UPLOAD_BYTES + 1)
+    if len(content) > MAX_UPLOAD_BYTES:
+        raise HTTPException(
+            status_code=413,
+            detail=f"File exceeds the {MAX_UPLOAD_BYTES // (1024*1024)} MB limit.",
+        )
     with open(save_path, "wb") as f:
-        content = await file.read()
         f.write(content)
-        
-    # Stage 3: Optional upload of dictated audio to Azure Blob Storage
-    try:
-        from storage.blob_storage import upload_file
-        container_uploads = os.getenv("AZURE_STORAGE_CONTAINER_UPLOADS", "hdds-uploads")
-        blob_path = f"dictation-audio/{filename}"
-        upload_file(container_uploads, save_path, blob_path)
-    except Exception as e:
-        print(f"Failed to upload dictation to blob storage: {e}")
-        
+
+    # Mirror to Azure Blob off the request path (no-op if storage unconfigured).
+    if background_tasks is not None:
+        background_tasks.add_task(
+            _blob_upload_bg, "AZURE_STORAGE_CONTAINER_UPLOADS", "hdds-uploads",
+            save_path, f"dictation-audio/{filename}",
+        )
+
     from extraction.speech_to_text import transcribe_audio_file
     transcript = transcribe_audio_file(save_path)
     
@@ -365,7 +395,11 @@ def record_decision(request: DecisionRequest, user: dict = Depends(verify_token)
     return {"status": "recorded", "logged_at": entry["timestamp"]}
 
 @app.post("/api/upload")
-async def upload_file(file: UploadFile = File(...), user: dict = Depends(verify_token)):
+async def upload_file(
+    file: UploadFile = File(...),
+    background_tasks: BackgroundTasks = None,
+    user: dict = Depends(verify_token),
+):
     """
     Upload a patient document. Accepts:
       - .pdf files (parsed as text, then mapped to profile)
@@ -373,28 +407,32 @@ async def upload_file(file: UploadFile = File(...), user: dict = Depends(verify_
     """
     os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-    filename = file.filename or "upload"
+    filename = _safe_filename(file.filename or "upload")
     ext = os.path.splitext(filename)[1].lower()
-
-    # Save uploaded file
-    save_path = os.path.join(UPLOAD_DIR, filename)
-    with open(save_path, "wb") as f:
-        content = await file.read()
-        f.write(content)
-
-    # Stage 3: Optional upload of documents to Azure Blob Storage
-    try:
-        from storage.blob_storage import upload_file
-        container_uploads = os.getenv("AZURE_STORAGE_CONTAINER_UPLOADS", "hdds-uploads")
-        blob_path = f"{ext.strip('.')}/{filename}"
-        upload_file(container_uploads, save_path, blob_path)
-    except Exception as e:
-        print(f"Failed to upload document to blob storage: {e}")
 
     if ext not in [".pdf", ".zip"]:
         raise HTTPException(
             status_code=400,
             detail=f"Unsupported file type: {ext}. Please upload .pdf or .zip files.",
+        )
+
+    # Read with a hard size cap so a huge file can't exhaust memory.
+    content = await file.read(MAX_UPLOAD_BYTES + 1)
+    if len(content) > MAX_UPLOAD_BYTES:
+        raise HTTPException(
+            status_code=413,
+            detail=f"File exceeds the {MAX_UPLOAD_BYTES // (1024*1024)} MB limit.",
+        )
+
+    save_path = os.path.join(UPLOAD_DIR, filename)
+    with open(save_path, "wb") as f:
+        f.write(content)
+
+    # Mirror to Azure Blob off the request path (no-op if storage unconfigured).
+    if background_tasks is not None:
+        background_tasks.add_task(
+            _blob_upload_bg, "AZURE_STORAGE_CONTAINER_UPLOADS", "hdds-uploads",
+            save_path, f"{ext.strip('.')}/{filename}",
         )
 
     # Parse the ACTUAL uploaded content into a patient profile.
