@@ -55,46 +55,56 @@ docker run -p 8000:8000 --env-file .env hdds-app
 
 ---
 
-## 🧠 Full System Architecture
+## 🧠 Full System Architecture (Comprehensive)
 
 ```text
-┌──────────────────────────────────────────────────────────────┐
-│                  Single Docker Container                     │
-│                                                              │
-│  ┌────────────────┐         ┌─────────────────────────────┐  │
-│  │ React Frontend │         │ FastAPI Backend (api.py)    │  │
-│  │ (Vite/Tailwind)├────────►│ - Serves React Static Files │  │
-│  └───────▲────────┘         │ - Handles /api/* routes     │  │
-│          │                  └─────────────┬───────────────┘  │
-└──────────┼────────────────────────────────┼──────────────────┘
-           │                                │
-           │                                ▼
-           │                    ┌───────────────────────┐
-           │                    │ Orchestrator Agent    │
-           │                    └──────┬────────┬───────┘
-           │                           │        │
-           │        ┌──────────────────▼─┐   ┌──▼──────────────────┐
-           │        │ Azure AI Search    │   │ Azure Document OCR  │
-           │        │ (Vector RAG DB)    │   │ Azure AI Speech     │
-           │        └────────────────────┘   └─────────────────────┘
-           │                           │
-           │                           ▼
-           │      ┌─────────────────────────────────────────┐
-           │      │        7 Sequential Sub-Agents          │
-           │      │  (Powered by Azure OpenAI GPT-4o)       │
-           │      │ ├─► Clinical Summary                    │
-           │      │ ├─► Risk Assessment                     │
-           │      │ ├─► Early Detection                     │
-           │      │ ├─► Recommendation                      │
-           │      │ ├─► Medication Prescription             │
-           │      │ ├─► Evidence Validation                 │
-           │      │ └─► Followup Action                     │
-           │      └────────────────────┬────────────────────┘
-           │                           │
-           │                           ▼
-           │           outputs/ai_medical_insights.json
-           │                           │
-           └───────────────────────────┴───────────► ☁️ Azure Blob Storage
+┌────────────────────────────────────────────────────────────────────────────────────────────────┐
+│                                 SINGLE DOCKER CONTAINER (App Service)                          │
+│                                                                                                │
+│  ┌────────────────────────────────────┐       ┌─────────────────────────────────────────────┐  │
+│  │         FRONTEND (Client)          │       │           FASTAPI BACKEND (Server)          │  │
+│  │                                    │       │                                             │  │
+│  │  [React 18 + Vite + Tailwind CSS]  │       │  [Uvicorn ASGI Server]                      │  │
+│  │   ├─ UI Components (Glassmorphism) │       │   ├─ StaticFiles Mount (Serves React UI)    │  │
+│  │   ├─ State Management              │       │   ├─ Auth Middleware (JWT + bcrypt)         │  │
+│  │   └─ config.js (API Router)        │◄──────┤   ├─ REST API Routes (/api/chat, /upload)   │  │
+│  │                                    │       │   └─ Audit Logger (Tracks user access/PHR)  │  │
+│  └────────────────────────────────────┘       │                                             │  │
+│                                               │  [Data Ingestion & Parsers]                 │  │
+│                                               │   ├─ document_parser.py (PDFs/ZIPs)         │  │
+│                                               │   ├─ fhir_converter.py (FHIR R4 Exports)    │  │
+│                                               │   └─ synthea_parser.py (CSV Data)           │  │
+│                                               │                                             │  │
+│                                               │  [The Intelligence Core]                    │  │
+│                                               │   └─► Orchestrator Agent                    │  │
+│                                               │        │                                    │  │
+│                                               │        ├─► rag/factory.py (Selector)        │  │
+│                                               │        │    └─► AzureSearchRAGSystem        │  │
+│                                               │        │                                    │  │
+│                                               │        ├─► [7 Sequential Sub-Agents]        │  │
+│                                               │        │    ├─ Clinical Summary Agent       │  │
+│                                               │        │    ├─ Risk Assessment Agent        │  │
+│                                               │        │    ├─ Early Detection Agent        │  │
+│                                               │        │    ├─ Recommendation Agent         │  │
+│                                               │        │    ├─ Medication Prescription      │  │
+│                                               │        │    ├─ Evidence Validation Agent    │  │
+│                                               │        │    └─ Followup Action Agent        │  │
+│                                               │        │                                    │  │
+│                                               │        └─► Chatbot Agent (Q&A)              │  │
+│                                               └───────────────────────┬─────────────────────┘  │
+└───────────────────────────────────────────────────────────────────────┼────────────────────────┘
+                                                                        │
+ ┌──────────────────────────────────────────────────────────────────────▼────────────────────────┐
+ │                                     MICROSOFT AZURE CLOUD                                     │
+ │                                                                                               │
+ │  [Cognitive Services]                          [Persistence & Search]                         │
+ │   ├─ Azure OpenAI (GPT-4o + Embeddings)         ├─ Azure AI Search (Vector RAG Database)      │
+ │   ├─ Azure Document Intelligence (OCR)          │   └─ Clinical Guidelines Index              │
+ │   ├─ Azure Text Analytics for Health (NER)      │                                             │
+ │   └─ Azure AI Speech (Dictation)                ├─ Azure Blob Storage (Cloud Drive)           │
+ │                                                     ├─ RAW Documents & Uploads                │
+ │                                                     └─ Generated AI Insights (JSON)           │
+ └───────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
 - **`api.py`** — The unified server. Serves the React Dashboard AND the backend API routes (`/api/upload`, `/api/chat`, etc.).
