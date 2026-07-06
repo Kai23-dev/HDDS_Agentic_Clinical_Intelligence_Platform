@@ -78,7 +78,7 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f8f9fa]">
+    <div className="min-h-screen bg-ey-light font-sans text-ey-dark selection:bg-ey-yellow selection:text-ey-dark">
       {/* Modify Header manually later if we want to add logout, but for now just pass role */}
       <Header />
 
@@ -100,19 +100,19 @@ function App() {
       )}
 
       {view === 'error' && (
-        <div className="max-w-lg mx-auto px-6 py-16 text-center">
-          <div className="bg-white rounded-lg border border-red-200 p-8">
-            <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="text-2xl">!</span>
+        <div className="max-w-lg mx-auto px-6 py-16 text-center animate-fade-in">
+          <div className="glass-panel rounded-2xl p-8 border-red-200/50 shadow-xl shadow-red-900/5">
+            <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm border border-red-100">
+              <span className="text-3xl font-light">!</span>
             </div>
-            <h2 className="text-xl font-bold text-[#2e2e38] mb-2">Something went wrong</h2>
-            <p className="text-sm text-gray-500 mb-4">{errorMsg}</p>
-            <p className="text-xs text-gray-400 mb-6">
-              Make sure the FastAPI server is running: <code className="bg-gray-100 px-1 py-0.5 rounded">python api.py</code>
+            <h2 className="text-2xl font-bold text-ey-dark mb-3">Something went wrong</h2>
+            <p className="text-base text-gray-600 mb-6 font-medium">{errorMsg}</p>
+            <p className="text-xs text-gray-400 mb-8 px-4">
+              Make sure the FastAPI server is running: <code className="bg-gray-100 text-gray-700 px-2 py-1 rounded border border-gray-200">python api.py</code>
             </p>
             <button
               onClick={handleBack}
-              className="px-5 py-2.5 bg-[#ffe600] text-[#2e2e38] rounded-lg font-semibold text-sm hover:bg-[#e6cf00]"
+              className="premium-button px-8 py-3 bg-ey-yellow text-ey-dark rounded-xl font-bold text-sm shadow-md"
             >
               Try Again
             </button>

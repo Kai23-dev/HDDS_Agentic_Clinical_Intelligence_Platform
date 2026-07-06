@@ -21,3 +21,4 @@ azure-storage-blob>=12.19.0             # dataset/upload/output storage (storage
 azure-cognitiveservices-speech>=1.37.0  # dictation speech-to-text (extraction/speech_to_text.py)
 azure-ai-documentintelligence>=1.0.0    # OCR for scanned PDFs (extraction/document_intelligence.py)
 azure-healthinsights-radiologyinsights>=1.0.0  # radiology report analysis (extraction/radiology_insights.py)
+azure-search-documents>=11.4.0          # Azure AI Search vector database for RAG (rag/azure_search_rag.py)
