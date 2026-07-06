@@ -55,20 +55,50 @@ docker run -p 8000:8000 --env-file .env hdds-app
 
 ---
 
-## 🧠 The Agentic Pipeline
+## 🧠 Full System Architecture
 
 ```text
-Upload/Dictation ─► FastAPI ─► OrchestratorAgent ─► RAG Database (Azure AI Search)
-                                       │
-                                       ▼
-                       [7 Sequential Clinical Sub-Agents]
-                                       │
-                                       ▼
-                       outputs/ai_medical_insights.json ─► Azure Blob Storage
+┌──────────────────────────────────────────────────────────────┐
+│                  Single Docker Container                     │
+│                                                              │
+│  ┌────────────────┐         ┌─────────────────────────────┐  │
+│  │ React Frontend │         │ FastAPI Backend (api.py)    │  │
+│  │ (Vite/Tailwind)├────────►│ - Serves React Static Files │  │
+│  └───────▲────────┘         │ - Handles /api/* routes     │  │
+│          │                  └─────────────┬───────────────┘  │
+└──────────┼────────────────────────────────┼──────────────────┘
+           │                                │
+           │                                ▼
+           │                    ┌───────────────────────┐
+           │                    │ Orchestrator Agent    │
+           │                    └──────┬────────┬───────┘
+           │                           │        │
+           │        ┌──────────────────▼─┐   ┌──▼──────────────────┐
+           │        │ Azure AI Search    │   │ Azure Document OCR  │
+           │        │ (Vector RAG DB)    │   │ Azure AI Speech     │
+           │        └────────────────────┘   └─────────────────────┘
+           │                           │
+           │                           ▼
+           │      ┌─────────────────────────────────────────┐
+           │      │        7 Sequential Sub-Agents          │
+           │      │  (Powered by Azure OpenAI GPT-4o)       │
+           │      │ ├─► Clinical Summary                    │
+           │      │ ├─► Risk Assessment                     │
+           │      │ ├─► Early Detection                     │
+           │      │ ├─► Recommendation                      │
+           │      │ ├─► Medication Prescription             │
+           │      │ ├─► Evidence Validation                 │
+           │      │ └─► Followup Action                     │
+           │      └────────────────────┬────────────────────┘
+           │                           │
+           │                           ▼
+           │           outputs/ai_medical_insights.json
+           │                           │
+           └───────────────────────────┴───────────► ☁️ Azure Blob Storage
 ```
 
 - **`api.py`** — The unified server. Serves the React Dashboard AND the backend API routes (`/api/upload`, `/api/chat`, etc.).
-- **`agents/orchestrator_agent.py`** — The brain. Pulls unstructured insights from Azure AI Search and sequentially triggers 7 clinical sub-agents (Risk Assessment, Early Detection, Medication Recommendation, etc.).
+- **`agents/orchestrator_agent.py`** — The brain. Orchestrates the flow from Azure AI Search (for guidelines) to Azure Document Intelligence (for PDFs), and sequentially triggers the 7 clinical sub-agents to build the final JSON payload.
 
 ---
 
