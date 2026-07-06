@@ -360,7 +360,7 @@ def run_sample_data(user: dict = Depends(verify_token)):
     return build_response(patients, actor=_actor(user))
 
 @app.post("/api/load-synthea")
-def load_synthea_data(user: dict = Depends(verify_token)):
+def load_synthea_data(background_tasks: BackgroundTasks = None, user: dict = Depends(verify_token)):
     """Run the pipeline on the parsed Synthea dataset."""
     from data_ingestion.synthea_parser import process_synthea_data
     output_path = process_synthea_data()
@@ -369,6 +369,13 @@ def load_synthea_data(user: dict = Depends(verify_token)):
     patients = data.get("patients", [])
     if not patients:
         raise HTTPException(status_code=400, detail="No patients found in Synthea data.")
+
+    # Mirror the parsed profiles to the processed-data container (no-op if unconfigured).
+    if background_tasks is not None:
+        background_tasks.add_task(
+            _blob_upload_bg, "AZURE_STORAGE_CONTAINER_PROCESSED", "hdds-processed-data",
+            output_path, "patient_profiles.json",
+        )
     log_event("run_pipeline", actor=_actor(user), resource="synthea_data",
               details=f"{len(patients)} patient(s)")
     return build_response(patients, actor=_actor(user))
