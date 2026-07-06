@@ -187,7 +187,10 @@ def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
 
 # ---- Routes ----
 
-@app.get("/")
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+
+@app.get("/api/health")
 def health_check():
     return {
         "status": "running",
@@ -474,6 +477,22 @@ async def upload_file(
     result["metadata"]["extraction"] = extraction
     return result
 
+# --- Frontend Serving (Must be at the very end!) ---
+frontend_path = os.path.join(PROJECT_ROOT, "frontend", "dist")
+
+# Only mount if the directory exists (e.g., after npm run build)
+if os.path.isdir(frontend_path):
+    app.mount("/assets", StaticFiles(directory=os.path.join(frontend_path, "assets")), name="assets")
+    
+    @app.get("/{catchall:path}")
+    def serve_react_app(catchall: str):
+        # Serve index.html for all non-API routes to support React SPA routing
+        if catchall.startswith("api/"):
+            raise HTTPException(status_code=404, detail="API route not found")
+        index_file = os.path.join(frontend_path, "index.html")
+        if os.path.exists(index_file):
+            return FileResponse(index_file)
+        raise HTTPException(status_code=404, detail="Frontend build not found. Run 'npm run build' first.")
 
 if __name__ == "__main__":
     import uvicorn
