@@ -3,7 +3,7 @@ import csv
 import json
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
-RAW_DATA_DIR = os.path.join(BASE_DIR, 'data', 'raw')
+RAW_DATA_DIR = os.path.join(BASE_DIR, 'data', 'raw', 'synthea_csv', 'csv')
 PROCESSED_DATA_DIR = os.path.join(BASE_DIR, 'data', 'processed')
 
 def read_csv(filename):
@@ -27,7 +27,7 @@ def calculate_age(birthdate_str):
 def process_synthea_data():
     os.makedirs(PROCESSED_DATA_DIR, exist_ok=True)
     
-    patients = read_csv('patients.csv')
+    patients = read_csv('patients.csv')[:15]
     conditions = read_csv('conditions.csv')
     medications = read_csv('medications.csv')
     observations = read_csv('observations.csv')
