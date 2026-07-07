@@ -137,7 +137,6 @@ graph TD
 
 - **[SETUP.md](hdds_clinical_intelligence/SETUP.md)** — Detailed Azure deployment guide.
 - **[ROADMAP.md](hdds_clinical_intelligence/ROADMAP.md)** — Honest gap analysis and path to real clinical use.
-- **[CLAUDE.md](hdds_clinical_intelligence/CLAUDE.md)** — Architecture conventions for contributors.
 
 ---
 
