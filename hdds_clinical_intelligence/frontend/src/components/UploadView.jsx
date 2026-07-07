@@ -4,13 +4,21 @@
   or run the pipeline on sample data.
 */
 import { useState, useRef } from 'react';
-import { Upload, FileText, Database, ArrowRight, AlertTriangle } from 'lucide-react';
+import { Upload, FileText, Database, ArrowRight, AlertTriangle, Mic } from 'lucide-react';
 
 export default function UploadView({ onProcessStart }) {
   const [dragOver, setDragOver] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const [error, setError] = useState(null);
   const fileInputRef = useRef(null);
+  const audioInputRef = useRef(null);
+
+  const handleAudioSelect = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      onProcessStart({ type: 'dictate', file });
+    }
+  };
 
   const handleDrop = (e) => {
     e.preventDefault();
@@ -160,6 +168,20 @@ export default function UploadView({ onProcessStart }) {
         >
           <Database className="w-4 h-4" /> Load Synthea Dataset
         </button>
+
+        <button
+          onClick={() => audioInputRef.current?.click()}
+          className="premium-button px-6 py-3 rounded-xl font-semibold text-sm border border-gray-300 bg-white text-purple-600 hover:bg-purple-50 flex items-center gap-2 justify-center"
+        >
+          <Mic className="w-4 h-4" /> Upload Audio Dictation
+        </button>
+        <input
+          type="file"
+          ref={audioInputRef}
+          onChange={handleAudioSelect}
+          accept=".wav,.mp3"
+          className="hidden"
+        />
       </div>
 
       {/* Disclaimer */}

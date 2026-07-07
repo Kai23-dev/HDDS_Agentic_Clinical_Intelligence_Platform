@@ -65,6 +65,17 @@ function App() {
         response = await axios.post(`${API_URL}/api/upload`, formData, {
           headers: { ...headers, 'Content-Type': 'multipart/form-data' },
         });
+      } else if (input.type === 'dictate' && input.file) {
+        const formData = new FormData();
+        formData.append('file', input.file);
+        response = await axios.post(`${API_URL}/api/dictate`, formData, {
+          headers: { ...headers, 'Content-Type': 'multipart/form-data' },
+        });
+        if (response.data && response.data.transcript) {
+          window.alert("Audio Transcription Complete (Azure AI Speech):\n\n" + response.data.transcript);
+        }
+        setView('upload');
+        return;
       }
 
       if (response && response.data) {
