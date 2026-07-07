@@ -4,7 +4,7 @@
       "patient_id": "pat-001",
       "patient_name": "John Smith",
       "demographics": {
-        "age": 69,
+        "age": 71,
         "gender": "M",
         "source": "patients.csv"
       },
@@ -63,7 +63,7 @@
       "patient_id": "pat-002",
       "patient_name": "Maria Garcia",
       "demographics": {
-        "age": 84,
+        "age": 85,
         "gender": "F",
         "source": "patients.csv"
       },
