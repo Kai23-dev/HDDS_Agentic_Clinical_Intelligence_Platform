@@ -416,5 +416,252 @@
         "follow_up": "Return in 3 months for repeat CBC and iron studies"
       }
     ]
+  },
+  {
+    "patient_profile": {
+      "patient_id": "SYNTH-004",
+      "name": "Sarah Johnson (Synthetic)",
+      "age": 28,
+      "gender": "Female",
+      "date_of_birth": "1998-05-12",
+      "blood_type": "A-",
+      "primary_language": "English",
+      "emergency_contact": "Mark Johnson (Father)"
+    },
+    "medical_history": [
+      {
+        "condition": "Healthy / No chronic conditions",
+        "icd_code": "Z00.00",
+        "diagnosed_date": "2024-01-10",
+        "status": "Active",
+        "severity": "None"
+      }
+    ],
+    "medications": [],
+    "lab_results": [
+      {
+        "test_name": "Blood Pressure",
+        "value": "110/70",
+        "unit": "mmHg",
+        "reference_range": "< 120/80",
+        "status": "Normal",
+        "date": "2025-06-15",
+        "ordering_provider": "Dr. Davis"
+      },
+      {
+        "test_name": "Total Cholesterol",
+        "value": 160,
+        "unit": "mg/dL",
+        "reference_range": "< 200",
+        "status": "Normal",
+        "date": "2025-06-15",
+        "ordering_provider": "Dr. Davis"
+      }
+    ],
+    "procedures": [],
+    "encounters": [
+      {
+        "encounter_id": "ENC-2025-0615",
+        "date": "2025-06-15",
+        "type": "Wellness Visit",
+        "provider": "Dr. Davis (Primary Care)",
+        "reason": "Annual physical exam",
+        "notes": "Patient is in excellent health. Exercises 4x a week. No complaints.",
+        "follow_up": "Return in 1 year for annual exam"
+      }
+    ]
+  },
+  {
+    "patient_profile": {
+      "patient_id": "SYNTH-005",
+      "name": "Michael Brown (Synthetic)",
+      "age": 45,
+      "gender": "Male",
+      "date_of_birth": "1981-08-22",
+      "blood_type": "O+",
+      "primary_language": "English",
+      "emergency_contact": "Lisa Brown (Spouse)"
+    },
+    "medical_history": [
+      {
+        "condition": "Prediabetes",
+        "icd_code": "R73.03",
+        "diagnosed_date": "2024-11-05",
+        "status": "Active",
+        "severity": "Mild"
+      },
+      {
+        "condition": "Hyperlipidemia",
+        "icd_code": "E78.5",
+        "diagnosed_date": "2023-05-12",
+        "status": "Active",
+        "severity": "Mild"
+      }
+    ],
+    "medications": [
+      {
+        "name": "Atorvastatin",
+        "dosage": "20 mg",
+        "frequency": "Once daily",
+        "route": "Oral",
+        "prescribing_doctor": "Dr. Adams",
+        "start_date": "2023-05-15",
+        "indication": "Hyperlipidemia"
+      }
+    ],
+    "lab_results": [
+      {
+        "test_name": "HbA1c",
+        "value": 6.1,
+        "unit": "%",
+        "reference_range": "4.0-5.6",
+        "status": "Borderline High",
+        "date": "2025-06-10",
+        "ordering_provider": "Dr. Adams"
+      },
+      {
+        "test_name": "Blood Pressure",
+        "value": "135/85",
+        "unit": "mmHg",
+        "reference_range": "< 130/80",
+        "status": "Borderline High",
+        "date": "2025-06-10",
+        "ordering_provider": "Dr. Adams"
+      },
+      {
+        "test_name": "LDL Cholesterol",
+        "value": 115,
+        "unit": "mg/dL",
+        "reference_range": "< 100",
+        "status": "Borderline High",
+        "date": "2025-06-10",
+        "ordering_provider": "Dr. Adams"
+      }
+    ],
+    "procedures": [],
+    "encounters": [
+      {
+        "encounter_id": "ENC-2025-0610",
+        "date": "2025-06-10",
+        "type": "Office Visit",
+        "provider": "Dr. Adams (Primary Care)",
+        "reason": "Follow up on cholesterol and prediabetes",
+        "notes": "Patient reports trying to eat healthier but struggles with exercise. HbA1c is stable at 6.1. LDL remains slightly elevated. Encouraged Mediterranean diet.",
+        "follow_up": "Return in 6 months for repeat A1c and lipid panel"
+      }
+    ]
+  },
+  {
+    "patient_profile": {
+      "patient_id": "SYNTH-006",
+      "name": "Robert Taylor (Synthetic)",
+      "age": 68,
+      "gender": "Male",
+      "date_of_birth": "1958-02-14",
+      "blood_type": "B-",
+      "primary_language": "English",
+      "emergency_contact": "Susan Taylor (Spouse)"
+    },
+    "medical_history": [
+      {
+        "condition": "Type 2 diabetes mellitus",
+        "icd_code": "E11.9",
+        "diagnosed_date": "2010-08-20",
+        "status": "Active",
+        "severity": "Severe"
+      },
+      {
+        "condition": "Coronary artery disease",
+        "icd_code": "I25.10",
+        "diagnosed_date": "2022-11-10",
+        "status": "Active",
+        "severity": "Severe"
+      },
+      {
+        "condition": "Prior Myocardial Infarction",
+        "icd_code": "I25.2",
+        "diagnosed_date": "2023-01-15",
+        "status": "Resolved",
+        "severity": "Severe"
+      }
+    ],
+    "medications": [
+      {
+        "name": "Metformin",
+        "dosage": "1000 mg",
+        "frequency": "Twice daily",
+        "route": "Oral",
+        "prescribing_doctor": "Dr. Vance",
+        "start_date": "2010-08-25",
+        "indication": "Type 2 diabetes"
+      },
+      {
+        "name": "Clopidogrel",
+        "dosage": "75 mg",
+        "frequency": "Once daily",
+        "route": "Oral",
+        "prescribing_doctor": "Dr. Vance",
+        "start_date": "2023-01-18",
+        "indication": "Post-MI prophylaxis"
+      },
+      {
+        "name": "Lisinopril",
+        "dosage": "20 mg",
+        "frequency": "Once daily",
+        "route": "Oral",
+        "prescribing_doctor": "Dr. Vance",
+        "start_date": "2022-11-15",
+        "indication": "CAD / Hypertension"
+      }
+    ],
+    "lab_results": [
+      {
+        "test_name": "HbA1c",
+        "value": 10.5,
+        "unit": "%",
+        "reference_range": "4.0-5.6",
+        "status": "Critically High",
+        "date": "2025-06-20",
+        "ordering_provider": "Dr. Vance"
+      },
+      {
+        "test_name": "Troponin I",
+        "value": 0.08,
+        "unit": "ng/mL",
+        "reference_range": "< 0.04",
+        "status": "Elevated",
+        "date": "2025-06-20",
+        "ordering_provider": "Dr. Vance"
+      },
+      {
+        "test_name": "Blood Pressure",
+        "value": "165/95",
+        "unit": "mmHg",
+        "reference_range": "< 130/80",
+        "status": "High",
+        "date": "2025-06-20",
+        "ordering_provider": "Dr. Vance"
+      }
+    ],
+    "procedures": [
+      {
+        "name": "Coronary Angiography",
+        "date": "2023-01-15",
+        "provider": "Dr. Vance (Cardiology)",
+        "result": "90% occlusion of LAD, stent placed successfully.",
+        "cpt_code": "93454"
+      }
+    ],
+    "encounters": [
+      {
+        "encounter_id": "ENC-2025-0620",
+        "date": "2025-06-20",
+        "type": "Urgent Care",
+        "provider": "Dr. Vance (Cardiology)",
+        "reason": "Chest tightness and uncontrolled blood sugar",
+        "notes": "Patient presents with mild chest tightness. Vitals show severe hypertension. HbA1c is critically high at 10.5%. Troponin is slightly elevated. Needs immediate medication review and possible admission.",
+        "follow_up": "Send to ED for acute cardiac evaluation"
+      }
+    ]
   }
 ]
