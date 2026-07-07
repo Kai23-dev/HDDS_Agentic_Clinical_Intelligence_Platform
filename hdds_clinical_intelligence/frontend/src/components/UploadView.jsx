@@ -45,13 +45,13 @@ export default function UploadView({ onProcessStart }) {
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-6 py-12">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
       {/* Intro section */}
       <div className="text-center mb-10">
-        <h2 className="text-3xl font-bold text-[#2e2e38] mb-3">
+        <h2 className="text-2xl sm:text-3xl font-bold text-ey-dark mb-3">
           Upload Patient Documents
         </h2>
-        <p className="text-gray-500 max-w-xl mx-auto">
+        <p className="text-gray-500 max-w-xl mx-auto text-sm sm:text-base">
           Upload hospital discharge summaries, lab results, medication lists, or
           medical history documents. Our AI agents will extract and analyze the
           data to generate clinical insights.
@@ -59,7 +59,7 @@ export default function UploadView({ onProcessStart }) {
       </div>
 
       {/* Architecture flow diagram */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6 mb-8">
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-8 result-card">
         <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">
           How It Works
         </h3>
@@ -73,7 +73,7 @@ export default function UploadView({ onProcessStart }) {
           </div>
           <ArrowRight className="w-4 h-4 text-gray-300 flex-shrink-0" />
           <div className="flex-1">
-            <div className="w-12 h-12 bg-[#ffe600]/20 rounded-full flex items-center justify-center mx-auto mb-2">
+            <div className="w-12 h-12 bg-ey-yellow/20 rounded-full flex items-center justify-center mx-auto mb-2">
               <Database className="w-5 h-5 text-[#b8a800]" />
             </div>
             <p className="text-xs font-medium text-gray-600">AI Extraction</p>
@@ -92,7 +92,7 @@ export default function UploadView({ onProcessStart }) {
 
       {/* Upload area */}
       <div
-        className={`upload-zone rounded-lg p-10 text-center cursor-pointer mb-6 ${dragOver ? 'dragging' : ''}`}
+        className={`upload-zone rounded-xl p-8 sm:p-10 text-center cursor-pointer mb-6 ${dragOver ? 'dragging' : ''}`}
         onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
         onDragLeave={() => setDragOver(false)}
         onDrop={handleDrop}
@@ -109,7 +109,7 @@ export default function UploadView({ onProcessStart }) {
         {selectedFile ? (
           <div>
             <FileText className="w-12 h-12 text-green-500 mx-auto mb-3" />
-            <p className="font-semibold text-[#2e2e38]">{selectedFile.name}</p>
+            <p className="font-semibold text-ey-dark">{selectedFile.name}</p>
             <p className="text-sm text-gray-400 mt-1">
               {(selectedFile.size / 1024).toFixed(1)} KB - Ready to process
             </p>
@@ -138,9 +138,9 @@ export default function UploadView({ onProcessStart }) {
         <button
           onClick={handleUpload}
           disabled={!selectedFile}
-          className={`px-6 py-3 rounded-lg font-semibold text-sm flex items-center gap-2 justify-center ${
+          className={`premium-button px-6 py-3 rounded-xl font-semibold text-sm flex items-center gap-2 justify-center ${
             selectedFile
-              ? 'bg-[#ffe600] text-[#2e2e38] hover:bg-[#e6cf00] shadow-sm'
+              ? 'bg-ey-yellow text-ey-dark hover:bg-[#e6cf00] shadow-sm'
               : 'bg-gray-200 text-gray-400 cursor-not-allowed'
           }`}
         >
@@ -149,21 +149,21 @@ export default function UploadView({ onProcessStart }) {
 
         <button
           onClick={handleSampleData}
-          className="px-6 py-3 rounded-lg font-semibold text-sm border border-gray-300 text-gray-600 hover:bg-gray-50 flex items-center gap-2 justify-center"
+          className="premium-button px-6 py-3 rounded-xl font-semibold text-sm border border-gray-300 bg-white text-gray-600 hover:bg-gray-50 flex items-center gap-2 justify-center"
         >
           <Database className="w-4 h-4" /> Use Sample Data
         </button>
 
         <button
           onClick={() => onProcessStart({ type: 'synthea' })}
-          className="px-6 py-3 rounded-lg font-semibold text-sm border border-gray-300 text-blue-600 hover:bg-blue-50 flex items-center gap-2 justify-center"
+          className="premium-button px-6 py-3 rounded-xl font-semibold text-sm border border-gray-300 bg-white text-blue-600 hover:bg-blue-50 flex items-center gap-2 justify-center"
         >
           <Database className="w-4 h-4" /> Load Synthea Dataset
         </button>
       </div>
 
       {/* Disclaimer */}
-      <div className="mt-10 bg-amber-50 border border-amber-200 rounded-lg p-4 text-center">
+      <div className="mt-10 bg-amber-50 border border-amber-200 rounded-xl p-4 text-center">
         <p className="text-xs text-amber-700">
           <strong>Disclaimer:</strong> This is a prototype using synthetic data only.
           All outputs are for clinician review purposes and do not constitute a medical diagnosis.

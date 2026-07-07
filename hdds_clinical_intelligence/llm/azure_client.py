@@ -37,14 +37,19 @@ def _get_client():
     return _client
 
 
-def chat(messages: List[dict], temperature: float = 0.2, max_tokens: int = 800) -> str:
-    """Run a chat completion. `messages` is the standard [{role, content}] list."""
+def chat(messages: List[dict], temperature: float = 0.2, max_tokens: int = 800, timeout: float = 6.0) -> str:
+    """Run a chat completion. `messages` is the standard [{role, content}] list.
+
+    `timeout` (seconds) keeps a misconfigured/unreachable deployment from hanging
+    the request; the caller is expected to fall back to another backend on error.
+    """
     deployment = os.getenv("AZURE_OPENAI_CHAT_DEPLOYMENT", "gpt-4o")
     resp = _get_client().chat.completions.create(
         model=deployment,
         messages=messages,
         temperature=temperature,
         max_tokens=max_tokens,
+        timeout=timeout,
     )
     return resp.choices[0].message.content or ""
 

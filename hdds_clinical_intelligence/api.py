@@ -158,6 +158,23 @@ USERS = {
     "admin@ey.com": {"password_hash": hash_password("admin"), "role": "admin", "name": "System Admin"},
 }
 
+# Self-registered accounts persist here (JSON file, alongside the other processed
+# data files) so they survive server restarts. Merged into USERS at startup.
+REGISTERED_USERS_FILE = os.path.join(PROJECT_ROOT, "data", "processed", "registered_users.json")
+
+def _load_registered_users():
+    if os.path.exists(REGISTERED_USERS_FILE):
+        with open(REGISTERED_USERS_FILE, "r", encoding="utf-8") as f:
+            USERS.update(json.load(f))
+
+def _save_registered_users():
+    registered = {k: v for k, v in USERS.items() if v.get("registered")}
+    os.makedirs(os.path.dirname(REGISTERED_USERS_FILE), exist_ok=True)
+    with open(REGISTERED_USERS_FILE, "w", encoding="utf-8") as f:
+        json.dump(registered, f, indent=2)
+
+_load_registered_users()
+
 class LoginRequest(BaseModel):
     email: str
     password: str
@@ -176,6 +193,33 @@ def login(request: LoginRequest):
     })
     log_event("login_success", actor=request.email, details=f"role={user['role']}")
     return {"access_token": token, "role": user["role"], "name": user["name"]}
+
+class RegisterRequest(BaseModel):
+    name: str
+    email: str
+    password: str
+
+@app.post("/api/register")
+def register(request: RegisterRequest):
+    email = request.email.strip().lower()
+    if not email or "@" not in email:
+        raise HTTPException(status_code=400, detail="Enter a valid email address")
+    if len(request.password) < 6:
+        raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
+    if email in USERS:
+        raise HTTPException(status_code=409, detail="An account with this email already exists")
+
+    USERS[email] = {
+        "password_hash": hash_password(request.password),
+        "role": "doctor",
+        "name": request.name.strip() or email,
+        "registered": True,
+    }
+    _save_registered_users()
+    log_event("register_success", actor=email, details="role=doctor")
+
+    token = create_access_token({"sub": email, "role": "doctor", "name": USERS[email]["name"]})
+    return {"access_token": token, "role": "doctor", "name": USERS[email]["name"]}
 
 def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
     """Validate the signed JWT and return its claims (dict). 401 if invalid/expired."""
@@ -236,25 +280,27 @@ def chat_with_patient(request: ChatRequest, user: dict = Depends(verify_token)):
     if os.path.exists(patients_file):
         with open(patients_file, "r", encoding="utf-8") as f:
             profiles = json.load(f).get("patients", [])
-            
-    if not profiles:
-        # Fallback to sample data
-        if os.path.exists(SAMPLE_ALL):
-            with open(SAMPLE_ALL, "r", encoding="utf-8") as f:
-                data = json.load(f)
-                profiles = data if isinstance(data, list) else [data]
-                # Some sample data wraps patient inside "patient_profile"
-                profiles = [p.get("patient_profile", p) for p in profiles]
-        
+
     patient_data = next((p for p in profiles if p.get("patient_id") == request.patient_id), None)
-    
+
+    if not patient_data and os.path.exists(SAMPLE_ALL):
+        # Fallback to sample data (e.g. patients from /api/run-sample: SYNTH-00X).
+        # Keep the FULL record — medical_history/medications/lab_results are top-level
+        # siblings of "patient_profile", not nested inside it.
+        with open(SAMPLE_ALL, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            sample_records = data if isinstance(data, list) else [data]
+        patient_data = next(
+            (r for r in sample_records if r.get("patient_profile", r).get("patient_id") == request.patient_id),
+            None,
+        )
+
     if not patient_data:
         # Fallback to single sample
         if os.path.exists(SAMPLE_SINGLE):
             with open(SAMPLE_SINGLE, "r", encoding="utf-8") as f:
                 p = json.load(f)
-                p = p.get("patient_profile", p)
-                if p.get("patient_id") == request.patient_id:
+                if p.get("patient_profile", p).get("patient_id") == request.patient_id:
                     patient_data = p
 
     if not patient_data:
@@ -274,9 +320,17 @@ def chat_with_patient(request: ChatRequest, user: dict = Depends(verify_token)):
     gtx = GTXRagSystem()
     patient_data["gtx_unstructured_insights"] = gtx.extract_information(request.patient_id)
 
+    # Ground the chatbot in the already-computed agent pipeline output (risk level,
+    # recommendations, medications, etc.) for this patient, when available.
+    agent_results = next(
+        (p.get("agent_results", {}) for p in insights_data.get("patients", [])
+         if p.get("patient_id") == request.patient_id),
+        {},
+    )
+
     agent = ChatbotAgent()
-    answer = agent.run(request.question, patient_data)
-    
+    answer = agent.run(request.question, patient_data, agent_results)
+
     return {"answer": answer}
 
 @app.post("/api/dictate")

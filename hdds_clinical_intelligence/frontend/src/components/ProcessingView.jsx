@@ -29,18 +29,18 @@ export default function ProcessingView() {
   }, []);
 
   return (
-    <div className="max-w-2xl mx-auto px-6 py-16 text-center">
+    <div className="max-w-2xl mx-auto px-4 sm:px-6 py-12 sm:py-16 text-center">
       <div className="relative w-16 h-16 mx-auto mb-6">
-        <div className="absolute inset-0 rounded-full bg-[#ffe600]/30 pulse-ring"></div>
-        <div className="relative w-16 h-16 bg-[#ffe600] rounded-full flex items-center justify-center">
-          <Loader2 className="w-7 h-7 text-[#2e2e38] animate-spin" />
+        <div className="absolute inset-0 rounded-full bg-ey-yellow/30 pulse-ring"></div>
+        <div className="relative w-16 h-16 bg-ey-yellow rounded-full flex items-center justify-center">
+          <Loader2 className="w-7 h-7 text-ey-dark animate-spin" />
         </div>
       </div>
 
-      <h2 className="text-2xl font-bold text-[#2e2e38] mb-2">Processing Patient Data</h2>
+      <h2 className="text-2xl font-bold text-ey-dark mb-2">Processing Patient Data</h2>
       <p className="text-gray-500 mb-10">Running AI agent pipeline...</p>
 
-      <div className="text-left bg-white rounded-lg border border-gray-200 overflow-hidden">
+      <div className="text-left bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
         {AGENT_STEPS.map((step, i) => {
           const status = i < currentStep ? 'completed' : i === currentStep ? 'active' : 'pending';
           return (
@@ -60,7 +60,7 @@ export default function ProcessingView() {
                 )}
               </div>
               <div>
-                <p className={`text-sm font-semibold ${status === 'pending' ? 'text-gray-400' : 'text-[#2e2e38]'}`}>
+                <p className={`text-sm font-semibold ${status === 'pending' ? 'text-gray-400' : 'text-ey-dark'}`}>
                   {step.name}
                 </p>
                 <p className="text-xs text-gray-400">{step.desc}</p>
