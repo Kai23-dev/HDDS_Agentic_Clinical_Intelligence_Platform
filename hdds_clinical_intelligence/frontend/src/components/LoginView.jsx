@@ -31,7 +31,7 @@ export default function LoginView({ onLogin }) {
       }
       onLogin(data);
     } catch (err) {
-      setError(mode === 'login' ? 'Invalid email or password' : err.message);
+      setError(err.message || 'Invalid email or password');
     } finally {
       setIsLoading(false);
     }
