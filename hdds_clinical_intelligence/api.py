@@ -371,16 +371,34 @@ async def dictate_note(
     # Run the pipeline on the transcript
     actor = _actor(user)
     
+    # Parse the dictation transcript for clinical entities
+    from data_ingestion.document_parser import _structure_with_azure, _structure_locally
+    
+    structured = _structure_with_azure(transcript)
+    if structured is None:
+        conditions, meds, age, gender = _structure_locally(transcript)
+    else:
+        conditions, meds, age, gender = structured
+
     # We create a synthetic patient profile based on the dictation
     patient_mock = {
         "patient_id": "DICT-001",
-        "name": "Audio Dictation Patient",
-        "age": 65,
-        "gender": "Unknown",
-        "medical_history": [{"condition": "Unstructured Dictation", "status": "Active", "notes": transcript}],
-        "medications": [],
-        "lab_results": []
+        "patient_name": "Audio Dictation",
+        "patient_profile": {
+            "patient_id": "DICT-001",
+            "name": "Audio Dictation",
+            "age": age or "N/A",
+            "gender": gender or "N/A",
+        },
+        "medical_history": [{"condition": c, "status": "Active"} for c in conditions],
+        "medications": [
+            {"name": m, "dosage": "", "frequency": "", "DESCRIPTION": m} for m in meds
+        ],
+        "lab_results": [],
+        "encounters": [],
+        "clinical_text": transcript[:6000]
     }
+
     
     result = build_response([patient_mock], actor=actor)
     result["metadata"]["data_source"] = "Audio Dictation Transcription"
