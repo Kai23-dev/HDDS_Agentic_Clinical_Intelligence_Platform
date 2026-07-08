@@ -71,11 +71,9 @@ function App() {
         response = await axios.post(`${API_URL}/api/dictate`, formData, {
           headers: { ...headers, 'Content-Type': 'multipart/form-data' },
         });
-        if (response.data && response.data.transcript) {
-          window.alert("Audio Transcription Complete (Azure AI Speech):\n\n" + response.data.transcript);
+        if (response.data && response.data.metadata && response.data.metadata.transcript) {
+          window.alert("Audio Transcription Complete (Azure AI Speech):\n\n" + response.data.metadata.transcript);
         }
-        setView('upload');
-        return;
       }
 
       if (response && response.data) {

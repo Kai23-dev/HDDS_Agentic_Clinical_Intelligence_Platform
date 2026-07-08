@@ -368,7 +368,27 @@ async def dictate_note(
     if transcript is None:
         raise HTTPException(status_code=500, detail="Azure AI Speech is not configured or failed.")
         
-    return {"transcript": transcript}
+    # Run the pipeline on the transcript
+    actor = _actor(user)
+    
+    # We create a synthetic patient profile based on the dictation
+    patient_mock = {
+        "patient_id": "DICT-001",
+        "name": "Audio Dictation Patient",
+        "age": 65,
+        "gender": "Unknown",
+        "medical_history": [{"condition": "Unstructured Dictation", "status": "Active", "notes": transcript}],
+        "medications": [],
+        "lab_results": []
+    }
+    
+    result = build_response([patient_mock], actor=actor)
+    result["metadata"]["data_source"] = "Audio Dictation Transcription"
+    
+    # We still include the transcript so the UI could show it if needed
+    result["metadata"]["transcript"] = transcript
+    
+    return result
 
 @app.get("/api/fhir/{patient_id}")
 def get_fhir_data(patient_id: str, user: dict = Depends(verify_token)):
