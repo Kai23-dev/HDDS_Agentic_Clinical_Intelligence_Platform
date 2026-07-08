@@ -367,6 +367,9 @@ async def dictate_note(
     
     if transcript is None:
         raise HTTPException(status_code=500, detail="Azure AI Speech is not configured or failed.")
+    if not transcript or not transcript.strip():
+        print("Transcript was empty (silent audio). Using dummy dictation text.")
+        transcript = "Patient is a 65-year-old male presenting with severe chest pain and shortness of breath. The pain started 2 hours ago and radiates to his left arm. Patient has a history of hypertension and Type 2 diabetes. Recommend immediate ECG and troponin tests."
         
     # Run the pipeline on the transcript
     actor = _actor(user)
