@@ -187,8 +187,7 @@ export default function UploadView({ onProcessStart }) {
       {/* Disclaimer */}
       <div className="mt-10 bg-amber-50 border border-amber-200 rounded-xl p-4 text-center">
         <p className="text-xs text-amber-700">
-          <strong>Disclaimer:</strong> This is a prototype using synthetic data only.
-          All outputs are for clinician review purposes and do not constitute a medical diagnosis.
+          <strong>Disclaimer:</strong> This is a prototype using synthetic datasets (Synthea and Asclepius) only. All outputs are for clinician review purposes and do not constitute a medical diagnosis.
         </p>
       </div>
     </div>
